@@ -1,1 +1,1 @@
-x <- runif(100)
+x <- sin(runif(100))
