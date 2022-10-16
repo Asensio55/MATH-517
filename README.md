@@ -4,7 +4,7 @@ MATH-517 Project
 
 ### Data Description ###
 We conducted data exploration, analysis, and visualization on a dataset conttaining information from a dataset containing information about more than 40,000 movies dating back all the way to the nineteenth century!
-This dataset has lots of interesting information, but for the purposes of our analysis, we are only interested in thirteen parameters:
+This dataset has lots of interesting information, but for the purposes of our analysis, we are only interested in twelve parameters:
 
 * Movie title
 * Budget
