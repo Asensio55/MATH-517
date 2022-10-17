@@ -5,6 +5,45 @@ for (i in (1:length(movies_metadata$budget))){
     h=c(h,i)
   }
 }
-
 movies_metadata=movies_metadata[-h,]
-length(movies_metadata$budget)
+#length(movies_metadata$budget)
+
+
+movies_metadata$cost=1:length(movies_metadata$budget)
+for (i in 1:length(movies_metadata$budget)) {
+  if (isTRUE(movies_metadata$budget[i]<=10000000)==TRUE){
+  movies_metadata$cost[i]= 'LOW'  
+  }
+  else {
+  movies_metadata$cost[i]= 'HIGH'  
+  }
+}
+movies_metadata$english=1:length(movies_metadata$budget)
+for (i in 1:length(movies_metadata$budget)) {
+  if (isTRUE(movies_metadata$original_language[i]=='en')==TRUE){
+    movies_metadata$english[i]= 'YES'  
+  }
+  else {
+    movies_metadata$english[i]= 'NO'  
+  }
+}
+
+movies_metadata$profit=1:length(movies_metadata$budget)
+for (i in 1:length(movies_metadata$budget)) {
+  movies_metadata$profit[i]=movies_metadata$revenue[i]-movies_metadata$budget[i]
+}
+
+movies_metadata$profitable=1:length(movies_metadata$budget)
+for (i in 1:length(movies_metadata$budget)) {
+  if (isTRUE(movies_metadata$profit[i]>=90000000)==TRUE){
+    movies_metadata$profitable[i]= 'HUGE'  
+  }
+  else if (isTRUE(movies_metadata$profit[i]>0)==TRUE & isTRUE(movies_metadata$profit[i]<90000000)==TRUE){
+    movies_metadata$profitable[i]= 'YES'  
+  }
+  else {
+    movies_metadata$profitable[i]= 'NO'  
+  }
+}
+#I don't know how to find informations from genres and production companies
+
