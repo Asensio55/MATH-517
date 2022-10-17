@@ -46,4 +46,30 @@ for (i in 1:length(movies_metadata$budget)) {
   }
 }
 #I don't know how to find informations from genres and production companies
-
+library(ggplot2)
+ggplot(data = movies_metadata) + 
+  geom_bar(mapping = aes(x = original_language))
+# We can see that more or less all our movies are in english language
+ggplot(data = movies_metadata) + 
+  geom_bar(mapping = aes(x = original_language, fill = profitable))
+#We can also see that the most of the profits come from movies in en language
+ggplot(data = movies_metadata) + 
+  geom_bar(mapping = aes(x = profitable)) +
+  facet_wrap(~ english)
+#also the proportions of huge profitable's movies is bigger
+#for movies in en language
+ggplot(data = movies_metadata) +
+  geom_point(mapping = aes(x = vote_average, y = profit))
+# we can't say too much, but of course there is a little positive correlation
+ggplot(data = movies_metadata) +
+  geom_point(mapping = aes(x = vote_count, y = profit))
+# in this case we can see even less correlation
+ggplot(data = movies_metadata) +
+  geom_point(mapping = aes(x = popularity, y = profit))
+# no correlation
+ggplot(data = movies_metadata) +
+  geom_point(mapping = aes(x = vote_average, y = popularity))
+#no correlation
+ggplot(data = movies_metadata) +
+  geom_point(mapping = aes(x = vote_count, y = popularity))
+#no correlation
