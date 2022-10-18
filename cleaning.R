@@ -58,18 +58,34 @@ ggplot(data = movies_metadata) +
   facet_wrap(~ english)
 #also the proportions of huge profitable's movies is bigger
 #for movies in en language
-ggplot(data = movies_metadata) +
-  geom_point(mapping = aes(x = vote_average, y = profit))
-# we can't say too much, but of course there is a little positive correlation
-ggplot(data = movies_metadata) +
-  geom_point(mapping = aes(x = vote_count, y = profit))
-# in this case we can see even less correlation
-ggplot(data = movies_metadata) +
-  geom_point(mapping = aes(x = popularity, y = profit))
-# no correlation
-ggplot(data = movies_metadata) +
-  geom_point(mapping = aes(x = vote_average, y = popularity))
-#no correlation
-ggplot(data = movies_metadata) +
-  geom_point(mapping = aes(x = vote_count, y = popularity))
-#no correlation
+
+ggplot(data = movies_metadata, mapping = aes(x = vote_average, y = profit, color = english, shape = english)) +
+  geom_point() +
+  stat_smooth(method=lm) +
+  facet_wrap(~ english)
+
+#to be commented
+ggplot(data = movies_metadata, mapping = aes(x = vote_count, y = profit, color = english, shape = english)) +
+  geom_point() +
+  stat_smooth(method=lm) +
+  facet_wrap(~ english)
+
+#to be commented
+ggplot(data = movies_metadata, mapping = aes(x = popularity, y = profit, color = english, shape = english)) +
+  geom_point() +
+  stat_smooth(method=lm) +
+  facet_wrap(~ english)
+
+
+#to be commented
+ggplot(data = movies_metadata, mapping = aes(x = vote_average, y = popularity, color = english, shape = english)) +
+  geom_point() +
+  stat_smooth(method=lm) +
+  facet_wrap(~ english)
+#to be commented
+ggplot(data = movies_metadata, mapping = aes(x = vote_count, y = popularity, color = english, shape = english)) +
+  geom_point() +
+  stat_smooth(method=lm) +
+  facet_wrap(~ english)
+#to be commented
+
