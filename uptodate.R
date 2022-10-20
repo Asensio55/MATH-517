@@ -118,6 +118,17 @@ ggplot(movies_metadata, mapping= aes(vote_count,vote_average, color = english, s
 ### as expected, for lower counts, pretty even distribution of averages. For higher numbers (2000+), ...
 ### ... the two variables seem very much correlated. High average ~ High watch rate ~ high vote count ?  
 
+### ideas : 1. runtime related to pop., profit, vote count,...
+### 2. date of release related to ...
+### 3. some companies (pixar, disney) amass more profit, views,...
+### 4.add a variable dealing with profit as a percentage of the initial investment
+
+### 4.
+movies_metadata$percentprofit <- movies_metadata$profit/movies_metadata$budget
+### biased by outliers ? need good representation
+
+
+
 ### Working on the genres
 j <- which(grepl("Action",movies_metadata$genres)) #contains indices of films that are tagged 'Action'.
 
@@ -134,8 +145,63 @@ for (i in 1:length(movies_metadata$genres)) {
     movies_metadata$Action[i] <- "FALSE"
   }
 }
-
 ### easier way to do it. example with Adventure
 movies_metadata$Adventure <- grepl("Adventure",movies_metadata$genres)
+movies_metadata$Comedy <- grepl("Comedy",movies_metadata$genres)
+movies_metadata$Drama <- grepl("Drama",movies_metadata$genres)
+movies_metadata$Thriller <- grepl("Thriller",movies_metadata$genres)
 
 ### How to do something relevant with genres ?
+
+#vote_count vs vote average, separated by action
+ggplot(movies_metadata, mapping= aes(vote_count,vote_average, color = Action, shape = Action)) + 
+  geom_point() + 
+  stat_smooth(method = lm) + 
+  facet_wrap(~ Action)
+
+# n. of action
+count <- which(grepl("Science",movies_metadata$genres))
+n <- length(count)
+# 318 action, 649 non action
+
+ggplot(data = movies_metadata) + 
+  geom_bar(mapping = aes(x = Action, fill = profitable))
+
+
+#histogram of movies profitable with separation of Action vs non-Action
+ggplot(data = movies_metadata) + 
+  geom_bar(mapping = aes(x = profitable)) +
+  facet_wrap(~ Action)
+### more huge profit, less no, less yes.
+
+#plot of vote_count vs profit separated by genres
+ggplot(movies_metadata, mapping= aes(vote_count,profit, color = Action, shape = Action)) + 
+  geom_point() + 
+  stat_smooth(method = lm) + 
+  facet_wrap(~ Action)
+### pretty much seemingly independent
+
+ggplot(movies_metadata, mapping= aes(vote_count,profit, color = Adventure, shape = Adventure)) + 
+  geom_point() + 
+  stat_smooth(method = lm) + 
+  facet_wrap(~ Adventure)
+### more profit overall 
+
+ggplot(movies_metadata, mapping= aes(vote_count,profit, color = Drama, shape = Drama)) + 
+  geom_point() + 
+  stat_smooth(method = lm) + 
+  facet_wrap(~ Drama)
+### less profit overall
+
+ggplot(movies_metadata, mapping= aes(vote_count,profit, color =Comedy, shape = Comedy)) + 
+  geom_point() + 
+  stat_smooth(method = lm) + 
+  facet_wrap(~ Comedy)
+### less high view counts, so it seems Comedy attracts a niche audience. However, can still generate good profit
+
+ggplot(movies_metadata, mapping= aes(vote_count,profit, color = Thriller, shape = Thriller)) + 
+  geom_point() + 
+  stat_smooth(method = lm) + 
+  facet_wrap(~ Thriller)
+### On the contrary, no high profit, but sometimes high audience
+
