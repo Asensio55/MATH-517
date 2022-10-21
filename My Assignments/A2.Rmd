@@ -1,0 +1,84 @@
+---
+title: "Assignment 2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+rmixnorm <- function(N, mu1, mu2, sigma1, sigma2, tau){
+  ind <- I(runif(N) > tau)
+  X <- rep(0,N)
+  X[ind] <- rnorm(sum(ind), mu1, sigma1)
+  X[!ind] <- rnorm(sum(!ind), mu2, sigma2)
+  return(X)
+}
+
+dmixnorm <- function(x, mu1, mu2, sigma1, sigma2, tau){
+  y <- (1-tau)*dnorm(x,mu1,sigma1) + tau*dnorm(x,mu2,sigma2)
+  return(y)
+}
+```
+
+## Mean Square Error with Rescpet to Bin Width for each Kernel
+We can see that a binwidth of ~0.3 with an Epanechnikov kernal returns the lowest error of ~0.8
+
+```{r, echo=FALSE}
+
+# generate data from the Gaussian mixture f
+N <- 100
+mu1 <- 3
+mu2 <- 0
+sigma1 <- 0.5
+sigma2 <- 1
+tau <- 0.6
+
+percentiles = quantile(rmixnorm(10^7, mu1, mu2, sigma1, sigma2, tau), probs=c(0.01,0.99))
+first = percentiles[1]
+ninetyNinth = percentiles[2]
+
+
+gridArray = seq(from=first, to=ninetyNinth, length.out = 512)
+f = dmixnorm(gridArray, mu1, mu2, sigma1, sigma2, tau)
+
+errors_gaussian <- matrix(0, 200, 17)
+errors_epanechnikov <- matrix(0, 200, 17)
+errors_rectangular <- matrix(0, 200, 17)
+  
+for (x in 1:200){
+
+  # generate N = 100 samples from the Gaussian mixture
+
+  X <- rmixnorm(N, mu1, mu2, sigma1, sigma2, tau)
+  
+    
+  for (i in 1:17){
+    
+    bw = 0.05 + 0.05 * i
+    
+  
+    # perform density estimation
+    f_hat_gaussian = density(X, kernel="gaussian", from=first, to=ninetyNinth, n = 512, bw=bw)$y
+    f_hat_epanechnikov = density(X, kernel="epanechnikov", from=first, to=ninetyNinth, n = 512, bw=bw)$y
+    f_hat_rectangular = density(X, kernel="rectangular", from=first, to=ninetyNinth, n = 512, bw=bw)$y
+  
+    #calculate the error measure
+    errors_gaussian[x, i] <- sqrt(sum((f - f_hat_gaussian) ^ 2))
+    errors_epanechnikov[x, i] <- sqrt(sum((f - f_hat_epanechnikov) ^ 2))
+    errors_rectangular[x, i] <- sqrt(sum((f - f_hat_rectangular) ^ 2))
+  }
+}
+  
+
+
+  # report findings as a figure
+   plot(colMeans(errors_gaussian)~seq(from=0.1, to=0.9, by=0.05),type='l',bty='l',col=3, ylab="Mean Square Error", xlab="Bin Width")
+   lines(colMeans(errors_epanechnikov)~seq(from=0.1, to=0.9, by=0.05),col=2)
+   lines(colMeans(errors_rectangular)~seq(from=0.1, to=0.9, by=0.05),col=4)
+   legend("topright", col=c(3, 2, 4), lty=1, legend=c("Gaussian", "Epanechnikov", "Rectangular"))
+  
+```
