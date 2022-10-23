@@ -3,9 +3,9 @@ movies_metadata <- read.csv('Z:/stat_comp_hw2/movies_metadata.csv') ### update p
 movies_metadata <- movies_metadata[,!names(movies_metadata) %in% c("adult", "belongs_to_collection", "homepage", 'id', 'imdb_id', 'poster_path', 'spoken_languages', 'status', 'tagline', "title", 'video')]
 h=c()
 for (i in (1:length(movies_metadata$budget))){
-  if (isTRUE(movies_metadata$budget[i]<60000)==TRUE || is.na(movies_metadata$budget[i])==TRUE || isTRUE(movies_metadata$revenue[i]<20000)==TRUE || isTRUE(movies_metadata$runtime[i]<10)==TRUE || isTRUE(movies_metadata$vote_average[i]<0.2)==TRUE || isTRUE(movies_metadata$vote_count[i]<10)==TRUE){
+  if (isTRUE(movies_metadata$budget[i]<60000)==TRUE || is.na(movies_metadata$budget[i])==TRUE ||  isTRUE(movies_metadata$runtime[i]<10)==TRUE ||  isTRUE(movies_metadata$vote_count[i]<10)==TRUE){
     h=c(h,i)
-  }
+  }### why remove low revenue or low vote average ?
 }
 movies_metadata=movies_metadata[-h,] ### retains only interesting variables.h contains some specific subset based on revenue ?
 #length(movies_metadata$budget)
@@ -34,7 +34,7 @@ for (i in 1:length(movies_metadata$budget)) {
   }
 }
 
-movies_metadata$profit=1:length(movies_metadata$budget) ### adds a profit variable, dependant on budget and revenue
+movies_metadata$profit=1:length(movies_metadata$budget) ### adds a profit variable, dependent on budget and revenue
 for (i in 1:length(movies_metadata$budget)) {
   movies_metadata$profit[i]=movies_metadata$revenue[i]-movies_metadata$budget[i]
 }
@@ -136,16 +136,17 @@ j <- which(grepl("Action",movies_metadata$genres)) #contains indices of films th
 
 movies_metadata$Action=1:length(movies_metadata$genres) ### adds an Action variable for example
 temp <- 1
-for (i in 1:length(movies_metadata$genres)) {
-  if (i==j[temp]) {
-    movies_metadata$Action[i] <- "TRUE"
-    temp <- temp + 1
-  }
-  else {
-    movies_metadata$Action[i] <- "FALSE"
-  }
-}
+#for (i in 1:length(movies_metadata$genres)) {
+#  if (i==j[temp]) {
+#    movies_metadata$Action[i] <- "TRUE"
+#    temp <- temp + 1
+#  }
+#  else {
+#    movies_metadata$Action[i] <- "FALSE"
+#  }
+#}
 ### easier way to do it. example with Adventure
+movies_metadata$Action <- grepl("Action",movies_metadata$genres)
 movies_metadata$Adventure <- grepl("Adventure",movies_metadata$genres)
 movies_metadata$Comedy <- grepl("Comedy",movies_metadata$genres)
 movies_metadata$Drama <- grepl("Drama",movies_metadata$genres)
