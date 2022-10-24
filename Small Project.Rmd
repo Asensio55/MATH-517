@@ -35,7 +35,6 @@ First, we decided to work the data set a bit to adjust the variable types, add i
 ```{r rework, echo = FALSE}
 library(ggplot2)
 
-
 movies_metadata <- read.csv('./movies_metadata.csv') ### update path depending on how you stored it.
 movies_metadata <- movies_metadata[,!names(movies_metadata) %in% c("adult", "belongs_to_collection", "homepage", 'id', 'imdb_id', 'poster_path', 'spoken_languages', 'status', 'tagline', "title", 'video')]
 h=c()
@@ -138,6 +137,7 @@ ggplot(data = movies_metadata) + geom_bar(mapping = aes(x = profitable)) + facet
 
 ```
 
+On these two histograms, we can see the proportion of hugely profitable movies is bigger in english, which does not come as a surprise, as english is the main internationally known language around the world. 
 Next, we were interested in exploring the ratings of movies; In particular, we wanted to check wether the ratings of movies had any effect on the profit generated.
 
 
@@ -156,6 +156,8 @@ ggplot(data = movies_metadata, mapping = aes(x = vote_average, y = profit, color
   #facet_wrap(~ english)
 ```
 
+There is a stronger correlation between average vote, representing consumer rating, and profit for english films, although there are few non-english observations, so this induces a higher variance in that matter each time we do such a differentiation.
+
 ### Areas of Interest ###
 
 After exploring the data, the following questions about the data have raised our curiosity:
@@ -163,3 +165,34 @@ After exploring the data, the following questions about the data have raised our
 2. Movies of which languages have the highest rating?
 3. Over time, how has the runtime of movies changed (i.e. Are movies getting longer or shorter?)
 4. Which companies produce the most popular movies?
+
+To answer the first question, we generated a scatterplot of the revenue against the budget of the films, as well as a scatterplot of the profit against the budget.
+``` {r revenue, echo = FALSE}
+ggplot(data = movies_metadata, mapping = aes(x = budget, y = revenue)) +
+     geom_point() +
+     stat_smooth(method=lm) + ggtitle("Effect of budget on the revenue"); ggplot(data = movies_metadata, mapping = aes(x = budget, y = profit)) +
+    geom_point() +
+    stat_smooth(method=lm) + 
+    ggtitle("Effect of budget on the profit")
+```
+
+There seems to be a correlation between high budget and high revenue, this is somewhat natural, as a high budget unlocks possibilities relative to advertisement, diffusion and quality of the material, which leads to higher audience and higher revenue. This correlation looks similar when looking at the profit instead of the revenue. Indeed, the highest profit films are some that initially have a high budget, and there are few movies with high deficit. however, most movies with high budget do not seem to attain a profit that is way higher than the low cost ones. 
+To further elaborate, we plot now the logarithm with base 10 of the budget against the profit, to see the impact of the scale of the budget on the revenue, represented under these lines as a heatmap.
+```{r logplot, echo = FALSE}
+ggplot(data = movies_metadata, mapping = aes(x = log10(budget), y = profit)) +
+    stat_binhex() +
+    scale_fill_gradient(low = "lightblue", high = "red")  + stat_smooth(method = lm) + ggtitle("heatmap of base 10 logarithm of budget against profit")
+```
+In this dataset, most films have low profit, and this tendency seems to change only for films with high order of budget (10^7,10^8).
+
+Moving on to the second question, we consider a histogram of the rating filled with the original language:
+```{r average_language, echo = FALSE}
+ggplot(data = movies_metadata) + 
+    geom_bar(mapping = aes(x = vote_average, fill = original_language)) + 
+    ggtitle("Histogram of the average audience vote, filled by original language")
+```
+Because of the vast majority of english films in the dataset, they tend to represent most of the extreme ratings, be it low or high. Moreover, english film ratings tend to concentrate around a rating of 6-7, corresponding to most other visible languages.
+
+We now focus on the runtime, looking at how it impacts audience score, profit, and how the mean runtime evolved through the last decenies.
+
+
