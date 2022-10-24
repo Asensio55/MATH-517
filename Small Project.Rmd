@@ -1,28 +1,165 @@
 ---
-title: "Small Project"
+title: "Small_Project_Markdown"
 output: html_document
+date: "2022-10-23"
+author: "Issam Arabi, Emmanuele Sorgente, Eric Maeder"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 
-## R Markdown
+# Exploratory Data Analysis of Movies and Shows #
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+### Description ###
+This project aims to analyse a data set concerning popular movies using exploratory tools.
+The said data set initially contains information about 45'466 different shows, organized into the following co-variates. In brackets are the variables we do not treat :
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
++ The show original budget
++ The genre categories, i.e. Action, Adventure, ...
++ The original language the show was created in
++ The title
++ (a quick overview of the plot)
++ A numeric index indicating the show popularity
++ The production companies
++ (The production country)
++ The original release date of the show
++ The total revenue
++ The show duration in minutes
++ A variable named "vote_average" representing the mean note given by users on an integer scale from 1 to 10.
++ The total number of said votes
 
-```{r cars}
-summary(cars)
+First, we decided to work the data set a bit to adjust the variable types, add interesting variables that are combinations of preexisting ones, and to remove subjectively uninteresting observations. Precisely, we removed from our data movies that have a small (<2000) or unknown budget, are under 10min long, or have under ten votes. Left are 1580 movies.
+
+```{r rework, echo = FALSE}
+library(ggplot2)
+
+
+movies_metadata <- read.csv('./movies_metadata.csv') ### update path depending on how you stored it.
+movies_metadata <- movies_metadata[,!names(movies_metadata) %in% c("adult", "belongs_to_collection", "homepage", 'id', 'imdb_id', 'poster_path', 'spoken_languages', 'status', 'tagline', "title", 'video')]
+h=c()
+for (i in (1:length(movies_metadata$budget))){
+  if (isTRUE(movies_metadata$budget[i]<60000)==TRUE || is.na(movies_metadata$budget[i])==TRUE ||  isTRUE(movies_metadata$runtime[i]<10)==TRUE ||  isTRUE(movies_metadata$vote_count[i]<10)==TRUE){
+    h=c(h,i)
+  }### why remove low revenue or low vote average ?
+}
+movies_metadata=movies_metadata[-h,] ### retains only interesting variables.h contains some specific subset based on revenue ?
+#length(movies_metadata$budget)
+
+### Adjustment of the variable types:
+movies_metadata$budget <- as.numeric(movies_metadata$budget)
+movies_metadata$popularity <- as.numeric(movies_metadata$popularity)
+
 ```
 
-## Including Plots
+New variables we deemed interesting to add:
 
-You can also embed plots, for example:
++ a binary indicator of whether the show had a low or high production cost (threshold 10'000'000)
++ another binary covariate returning 'true' if the show was originally produced in english.
++ a profit variable, calculated deducing the production cost from the revenue.
++ a ternary 'profitable' variable, with profit thresholds 0 and 90'000'000.
++ a numeric percentprofit covariate corresponding to the profit as a percentage of the  initial investment.
++ binary variables 'Action','Adventure',... indicating whether the show is in said film genres or not.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r adding, echo=FALSE}
+### calculating and adding variables of interest
+movies_metadata$cost=1:length(movies_metadata$budget)  ### creates a binary cost variable based on budget, threshold 10^7
+for (i in 1:length(movies_metadata$budget)) {
+  if (isTRUE(movies_metadata$budget[i]<=10000000)==TRUE){
+  movies_metadata$cost[i]= 'LOW'  
+  }
+  else {
+  movies_metadata$cost[i]= 'HIGH'  
+  }
+}
+movies_metadata$english=1:length(movies_metadata$budget) ### creates a binary 'english-based' english variable
+for (i in 1:length(movies_metadata$budget)) {
+  if (isTRUE(movies_metadata$original_language[i]=='en')==TRUE){
+    movies_metadata$english[i]= 'YES'  
+  }
+  else {
+    movies_metadata$english[i]= 'NO'  
+  }
+}
+
+movies_metadata$profit=1:length(movies_metadata$budget) ### adds a profit variable, dependent on budget and revenue
+for (i in 1:length(movies_metadata$budget)) {
+  movies_metadata$profit[i]=movies_metadata$revenue[i]-movies_metadata$budget[i]
+}
+
+movies_metadata$profitable=1:length(movies_metadata$budget) ### creates a ternary profitable variable with thresholds 9*10^7 and 0
+for (i in 1:length(movies_metadata$budget)) {
+  if (isTRUE(movies_metadata$profit[i]>=90000000)==TRUE){
+    movies_metadata$profitable[i]= 'HUGE'  
+  }
+  else if (isTRUE(movies_metadata$profit[i]>0)==TRUE & isTRUE(movies_metadata$profit[i]<90000000)==TRUE){
+    movies_metadata$profitable[i]= 'YES'  
+  }
+  else {
+    movies_metadata$profitable[i]= 'NO'  
+  }
+}
+### percentprofit variable
+movies_metadata$percentprofit <- movies_metadata$profit/movies_metadata$budget
+
+### genre variables 
+j <- which(grepl("Action",movies_metadata$genres)) #contains indices of films that are tagged 'Action'.
+
+### possible relevant tags : Action, Adventure, Thriller, War, Comedy, Horror, Thriller, Crime, Drama, Animation, Fantasy, Science fiction
+
+movies_metadata$Action=1:length(movies_metadata$genres) ### adds an Action variable for example
+
+movies_metadata$Action <- grepl("Action",movies_metadata$genres)
+movies_metadata$Adventure <- grepl("Adventure",movies_metadata$genres)
+movies_metadata$Comedy <- grepl("Comedy",movies_metadata$genres)
+movies_metadata$Drama <- grepl("Drama",movies_metadata$genres)
+movies_metadata$Thriller <- grepl("Thriller",movies_metadata$genres)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Moving on to the exploration part, we first investigated the language variable. 
+
+```{r english, echo = FALSE, out.width="50%"}
+par(mfrow=c(1,5))
+
+ggplot(data = movies_metadata) + geom_bar(mapping = aes(x = original_language)) + ggtitle("Movies by Language")
+
+```
+
+After noticing that most movies were in English, we decided to compare profits of English movies to movies in other languages.
+
+
+```{r, echo = FALSE, out.width="50%"}
+par(mfrow=c(1,5))
+
+ggplot(data = movies_metadata) + geom_bar(mapping = aes(x = original_language, fill = profitable)) + ggtitle("Movies by Language, with profit")
+
+ggplot(data = movies_metadata) + geom_bar(mapping = aes(x = profitable)) + facet_wrap(~ english) + ggtitle("Profit in English Movies vs. Others")
+
+```
+
+Next, we were interested in exploring the ratings of movies; In particular, we wanted to check wether the ratings of movies had any effect on the profit generated.
+
+
+```{r, echo = FALSE, out.width="50%"}
+par(mfrow=c(1,5))
+
+ggplot(data = movies_metadata, mapping = aes(x = vote_average, y = profit, color = english, shape = english)) + 
+  geom_point() + 
+  stat_smooth(method=lm) + 
+  facet_wrap(~ english) + 
+  ggtitle("Effect of Ratings on Profit in English Movies vs. Others")
+
+#ggplot(data = movies_metadata, mapping = aes(x = vote_count, y = profit, color = english, shape = english)) +
+  #geom_point() +
+  #stat_smooth(method=lm) +
+  #facet_wrap(~ english)
+```
+
+### Areas of Interest ###
+
+After exploring the data, the following questions about the data have raised our curiosity:
+1. How is the revenue generated by a movie related to its budget?
+2. Movies of which languages have the highest rating?
+3. Over time, how has the runtime of movies changed (i.e. Are movies getting longer or shorter?)
+4. Which companies produce the most popular movies?
