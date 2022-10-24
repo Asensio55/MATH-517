@@ -193,6 +193,60 @@ ggplot(data = movies_metadata) +
 ```
 Because of the vast majority of english films in the dataset, they tend to represent most of the extreme ratings, be it low or high. Moreover, english film ratings tend to concentrate around a rating of 6-7, corresponding to most other visible languages.
 
-We now focus on the runtime, looking at how it impacts audience score, profit, and how the mean runtime evolved through the last decenies.
+We now focus on the runtime, looking at how it impacts audience score, profit, and how the mean runtime evolved through the last decenies, taking into account we do not consider durations under 10 minutes, as we filtered them out of our dataset.
 
+To do so, we first add a 'decenny' variable representing in what decade the film came out. In doing so, we lose some precision over the results in hope to gain a better insight of the temporal evolution. 
+```{r decenny, echo = FALSE}
+movies_metadata$release_decenny=1:length(movies_metadata$release_date)
+for (i in 1:length(movies_metadata$release_date)) {
+  if (grepl("190",movies_metadata$release_date[i]) == TRUE) {
+    movies_metadata$decenny[i] = 1900
+  }
+  else if (grepl("191",movies_metadata$release_date[i]) == TRUE) {
+    movies_metadata$decenny[i] = 1910
+  }
+ else if (grepl("192",movies_metadata$release_date[i]) == TRUE) {
+   movies_metadata$decenny[i] = 1920
+ }
+  else if (grepl("193",movies_metadata$release_date[i]) == TRUE) {
+    movies_metadata$decenny[i] = 1930
+  }
+  else if (grepl("194",movies_metadata$release_date[i]) == TRUE) {
+    movies_metadata$decenny[i] = 1940
+    }
+  else if (grepl("195",movies_metadata$release_date[i]) == TRUE) {
+    movies_metadata$decenny[i] = 1950
+  }
+  else if (grepl("196",movies_metadata$release_date[i]) == TRUE) {
+    movies_metadata$decenny[i] = 1960
+  }
+  else if (grepl("197",movies_metadata$release_date[i]) == TRUE) {
+    movies_metadata$decenny[i] = 1970
+  }
+  else if (grepl("198",movies_metadata$release_date[i]) == TRUE) {
+    movies_metadata$decenny[i] = 1980
+  }
+  else if (grepl("199",movies_metadata$release_date[i]) == TRUE) {
+    movies_metadata$decenny[i] = 1990
+  }
+  else if (grepl("200",movies_metadata$release_date[i]) == TRUE) {
+    movies_metadata$decenny[i] = 2000
+  }
+  else if (grepl("201",movies_metadata$release_date[i]) == TRUE) {
+    movies_metadata$decenny[i] = 2010
+  }
+  else {
+    movies_metadata$decenny[i] = 2020
+  }
+}
+```
+``` {r runtime, echo = FALSE}
 
+ggplot(movies_metadata, mapping= aes(decenny,vote_average)) + 
+     geom_point() + 
+     stat_smooth(method = lm) ;
+
+ ggplot(movies_metadata, mapping= aes(decenny,runtime)) + 
+     geom_point() + 
+     stat_smooth(method = lm) 
+```
