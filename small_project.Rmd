@@ -1,0 +1,266 @@
+---
+title: "Exploratory Data Analysis of Movies and Shows"
+output: html_document
+date: "2022-10-23"
+author: "Issam Arabi, Emmanuele Sorgente, Eric Maeder"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+### Description ###
+This project aims to analyse a data set concerning popular movies using exploratory tools.
+The said data set initially contains information about 45'466 different shows, organized into the following co-variates. In brackets are the variables we do not treat :
+
++ The show original budget
++ The genre categories, i.e. Action, Adventure, ...
++ The original language the show was created in
++ The title
++ (a quick overview of the plot)
++ A numeric index indicating the show popularity
++ The production companies
++ (The production country)
++ The original release date of the show
++ The total revenue
++ The show duration in minutes
++ A variable named "vote_average" representing the mean note given by users on an integer scale from 1 to 10.
++ The total number of said votes
+
+First, we decided to work the data set a bit to adjust the variable types, add interesting variables that are combinations of preexisting ones, and to remove subjectively uninteresting observations. Precisely, we removed from our data movies that have a small (<2000) or unknown budget, are under 10min long, or have under ten votes. Left are 1580 movies.
+
+```{r rework, echo = FALSE}
+library(ggplot2)
+
+movies_metadata <- read.csv(file.choose(),header=TRUE)
+
+movies_metadata <- movies_metadata[,!names(movies_metadata) %in% c("adult", "belongs_to_collection", "homepage", 'id', 'imdb_id', 'poster_path', 'spoken_languages', 'status', 'tagline', "title", 'video')]
+h=c()
+for (i in (1:length(movies_metadata$budget))){
+  if (isTRUE(movies_metadata$budget[i]<60000)==TRUE || is.na(movies_metadata$budget[i])==TRUE ||  isTRUE(movies_metadata$runtime[i]<10)==TRUE ||  isTRUE(movies_metadata$vote_count[i]<10)==TRUE){
+    h=c(h,i)
+  }### why remove low revenue or low vote average ? They are probably possible outliers or high levarage points. In addition they are possibly errors from the dataset ... another point for example is that movies with a run time of less than 10 min are NOT movies; movies with a NULL budget are something that can give us bad data analysis. ETC...
+}
+movies_metadata=movies_metadata[-h,] ### retains only interesting variables.h contains some specific subset based on revenue ?
+#length(movies_metadata$budget)
+
+### Adjustment of the variable types:
+movies_metadata$budget <- as.numeric(movies_metadata$budget)
+movies_metadata$popularity <- as.numeric(movies_metadata$popularity)
+
+```
+
+New variables we deemed interesting to add:
+
++ a binary 'cost' indicator of whether the show had a low or high production cost (threshold 10'000'000.
++ another binary 'english' covariate returning 'true' if the show was originally produced in english language.
++ a 'profit' variable, calculated deducing the production cost from the revenue.
++ a ternary 'profitable' variable, with profit thresholds: 'No' - less or equal to zero, 'Yes' - between 0 and 90 MLN, 'Huge' - more than 90 MLN.
++ a numeric 'percentprofit' covariate corresponding to the profit as a percentage of the  initial investment.
++ binary variables 'Action','Adventure',... indicating whether the show is in said film genres or not.
+
+```{r adding, echo=FALSE}
+### calculating and adding variables of interest
+movies_metadata$cost=1:length(movies_metadata$budget)  ### creates a binary cost variable based on budget, threshold 10^7
+for (i in 1:length(movies_metadata$budget)) {
+  if (isTRUE(movies_metadata$budget[i]<=10000000)==TRUE){
+  movies_metadata$cost[i]= 'LOW'  
+  }
+  else {
+  movies_metadata$cost[i]= 'HIGH'  
+  }
+}
+movies_metadata$english=1:length(movies_metadata$budget) ### creates a binary 'english-based' english variable
+for (i in 1:length(movies_metadata$budget)) {
+  if (isTRUE(movies_metadata$original_language[i]=='en')==TRUE){
+    movies_metadata$english[i]= 'YES'  
+  }
+  else {
+    movies_metadata$english[i]= 'NO'  
+  }
+}
+
+movies_metadata$profit=1:length(movies_metadata$budget) ### adds a profit variable, dependent on budget and revenue
+for (i in 1:length(movies_metadata$budget)) {
+  movies_metadata$profit[i]=movies_metadata$revenue[i]-movies_metadata$budget[i]
+}
+
+movies_metadata$profitable=1:length(movies_metadata$budget) ### creates a ternary profitable variable with thresholds 9*10^7 and 0
+for (i in 1:length(movies_metadata$budget)) {
+  if (isTRUE(movies_metadata$profit[i]>=90000000)==TRUE){
+    movies_metadata$profitable[i]= 'HUGE'  
+  }
+  else if (isTRUE(movies_metadata$profit[i]>0)==TRUE & isTRUE(movies_metadata$profit[i]<90000000)==TRUE){
+    movies_metadata$profitable[i]= 'YES'  
+  }
+  else {
+    movies_metadata$profitable[i]= 'NO'  
+  }
+}
+### percentprofit variable
+movies_metadata$percentprofit <- movies_metadata$profit/movies_metadata$budget
+
+### genre variables 
+j <- which(grepl("Action",movies_metadata$genres)) #contains indices of films that are tagged 'Action'.
+
+### possible relevant tags : Action, Adventure, Thriller, War, Comedy, Horror, Thriller, Crime, Drama, Animation, Fantasy, Science fiction
+
+movies_metadata$Action=1:length(movies_metadata$genres) ### adds an Action variable for example
+
+movies_metadata$Action <- grepl("Action",movies_metadata$genres)
+movies_metadata$Adventure <- grepl("Adventure",movies_metadata$genres)
+movies_metadata$Comedy <- grepl("Comedy",movies_metadata$genres)
+movies_metadata$Drama <- grepl("Drama",movies_metadata$genres)
+movies_metadata$Thriller <- grepl("Thriller",movies_metadata$genres)
+```
+
+Moving on to the exploration part, we first investigated the language variable. 
+
+```{r english, echo = FALSE, out.width="50%"}
+par(mfrow=c(1,5))
+
+ggplot(data = movies_metadata) + geom_bar(mapping = aes(x = original_language)) + ggtitle("Movies by Language")
+
+```
+
+After noticing that most movies were in English, we decided to compare profits of English movies to movies in other languages.
+
+
+```{r, echo = FALSE, out.width="50%"}
+par(mfrow=c(1,5))
+
+ggplot(data = movies_metadata) + geom_bar(mapping = aes(x = original_language, fill = profitable)) + ggtitle("Movies by Language, with profit")
+
+ggplot(data = movies_metadata) + geom_bar(mapping = aes(x = profitable)) + facet_wrap(~ english) + ggtitle("Profit in English Movies vs. Others")
+
+```
+
+On these two histograms, we can see the proportion of hugely profitable movies is bigger in english, which does not come as a surprise, as english is the main internationally known language around the world. 
+Next, we were interested in exploring the ratings of movies; In particular, we wanted to check wether the ratings of movies had any effect on the profit generated.
+
+
+```{r, echo = FALSE, out.width="50%"}
+par(mfrow=c(1,5))
+
+ggplot(data = movies_metadata, mapping = aes(x = vote_average, y = profit, color = english, shape = english)) + 
+  geom_point() + 
+  stat_smooth(method=lm) + 
+  facet_wrap(~ english) + 
+  ggtitle("Effect of Ratings on Profit in English Movies vs. Others")
+
+#ggplot(data = movies_metadata, mapping = aes(x = vote_count, y = profit, color = english, shape = english)) +
+  #geom_point() +
+  #stat_smooth(method=lm) +
+  #facet_wrap(~ english)
+```
+
+There is a stronger correlation between average vote, representing consumer rating, and profit for english films, although there are few non-english observations, so this induces a higher variance in that matter each time we do such a differentiation.
+
+### Areas of Interest ###
+
+After exploring the data, the following questions about the data have raised our curiosity:
+
+1. How is the revenue generated by a movie related to its budget?
+2. Movies of which languages have the highest rating?
+3. Over time, how has the runtime of movies changed (i.e. Are movies getting longer or shorter?)
+4. Which companies produce the most popular movies?
+
+To answer the first question, we generated a scatterplot of the revenue against the budget of the films, as well as a scatterplot of the profit against the budget.
+``` {r revenue, echo = FALSE}
+ggplot(data = movies_metadata, mapping = aes(x = budget, y = revenue)) +
+     geom_point() +
+     stat_smooth(method=lm) + ggtitle("Effect of budget on the revenue"); ggplot(data = movies_metadata, mapping = aes(x = budget, y = profit)) +
+    geom_point() +
+    stat_smooth(method=lm) + 
+    ggtitle("Effect of budget on the profit")
+```
+
+There seems to be a correlation between high budget and high revenue, this is somewhat natural, as a high budget unlocks possibilities relative to advertisement, diffusion and quality of the material, which leads to higher audience and higher revenue. This correlation looks similar when looking at the profit instead of the revenue. Indeed, the highest profit films are some that initially have a high budget, and there are few movies with high deficit. however, most movies with high budget do not seem to attain a profit that is way higher than the low cost ones. 
+To further elaborate, we plot now the logarithm with base 10 of the budget against the profit, to see the impact of the scale of the budget on the revenue, represented under these lines as a heatmap.
+```{r logplot, echo = FALSE}
+#install.packages("hexbin") : package hexbin required to view this plot
+ggplot(data = movies_metadata, mapping = aes(x = log10(budget), y = profit)) +
+    stat_binhex() +
+    scale_fill_gradient(low = "lightblue", high = "red")  + stat_smooth(method = lm) + ggtitle("heatmap of base 10 logarithm of budget against profit")
+```
+
+In this dataset, most films have low profit, and this tendency seems to change only for films with high order of budget (10^7 ,10^8).
+
+Moving on to the second question, we consider a histogram of the rating filled with the original language:
+```{r average_language, echo = FALSE}
+ggplot(data = movies_metadata) + 
+    geom_bar(mapping = aes(x = vote_average, fill = original_language)) + 
+    ggtitle("Histogram of the average audience vote, filled by original language")
+```
+
+Because of the vast majority of english films in the dataset, they tend to represent most of the extreme ratings, be it low or high. Moreover, english film ratings tend to concentrate around a rating of 6-7, corresponding to most other visible languages.
+
+We now focus on the runtime, looking at how it impacts audience score, profit, and how the mean runtime evolved through the last decenies, taking into account we do not consider durations under 10 minutes, as we filtered them out of our dataset.
+
+To do so, we first add a 'year' variable representing in what year the film came out. In doing so, we lose some precision over the results in hope to gain a better insight of the temporal evolution. 
+```{r decenny, echo = FALSE}
+
+movies_metadata$year=1:length(movies_metadata$release_date)
+for (i in 1:length(movies_metadata$release_date)) {
+  movies_metadata$year[i] = as.numeric(substr(movies_metadata$release_date[i],1,4))
+}
+```
+``` {r runtime, echo = FALSE}
+
+ggplot(movies_metadata, mapping= aes(year,vote_average)) + 
+     geom_point() + 
+     stat_smooth(method = lm) + ggtitle("Average public note of the films against the release year") ;
+
+ ggplot(movies_metadata, mapping= aes(year,runtime)) + 
+     geom_point() + 
+     stat_smooth(method = lm) + ggtitle("Evolution of the film durations along the years")
+```
+
+Clearly, there are more and more movies coming out over the decades. The average vote has a decreasing tendency over the years, maybe due to the increasing number of low quality films that comes with the facilitated access to production. Remarkable is also the fact that the average runtime stays around 100 min since around 1920, so it looks as if both covariates were uncorrelated.
+
+Lastly, we are going to investigate which of the following companies produce the most popular movies:
+
+ - Paramount Pictures
+ - DreamWorks
+ - Walt Disney
+ - Warner Bros
+ - Fox Film Corp
+ - Universal Pictures
+ 
+ Therefore, for this part, we will only work on a subset of the data, namely the films produced by these companies only. This retains 433 observations. We then consider the histogram of vote_average, variable that will serve as an indicator for public appreciation, in each case.
+ 
+```{r companies, echo = FALSE}
+### creates a variable containing the seeked production companies and NA otherwise to enable easy filtering : 
+movies_metadata$company = 1:length(movies_metadata$production_companies)
+for (i in 1:length(movies_metadata$company)) {
+  if (grepl("Paramount",movies_metadata$production_companies[i])) {
+    movies_metadata$company[i] = "Paramount Pictures"
+  }
+  else if (grepl("Warner Bros",movies_metadata$production_companies[i])) {
+    movies_metadata$company[i] = "Warner Bros"
+  }
+  else if (grepl("Walt Disney", movies_metadata$production_companies[i])) {
+    movies_metadata$company[i] = "Walt Disney"
+  }
+  else if (grepl("Universal Pictures", movies_metadata$production_companies[i])) {
+    movies_metadata$company[i] = "Universal Pictures"
+  }
+  else if (grepl("Fox Film Corp", movies_metadata$production_companies[i])) {
+    movies_metadata$company[i] = "Fox Films"
+  }
+  else if (grepl("DreamWorks",movies_metadata$production_companies[i])) {
+    movies_metadata$company[i] = "DreamWorks"
+  }
+  else {
+    movies_metadata$company[i] = NA
+  }
+}
+### histogram of vote average separated by prod. comp.
+
+ggplot(data = movies_metadata[complete.cases(movies_metadata),]) + ### filters out the NAs to retain only interesting values
+  geom_bar(mapping = aes(x = vote_average,fill = company)) +
+  facet_wrap(~ company) + ggtitle("Average popularity votes per film per company")
+```
+
+We draw the following observations from the picture above: each company has a somewhat different popularity repartition than the others; some look somewhat uniform, like DreamWorks and Fox Films, others normal like Universal Pictures, some skewed,... Notice the x scale ranges from 4 to 9, so these companies are mostly popular. In the end, it seems the company that attains the highest average value is Paramount Pictures, and the one that has the most popular films on average is Warner Bros.
