@@ -6,7 +6,9 @@ author: "Issam Arabi, Emmanuele Sorgente, Eric Maeder"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(tidyr)
+library(dplyr)
 
 ```
 
@@ -146,7 +148,9 @@ ggplot(data = movies_metadata, mapping = aes(x = vote_average, y = profit, color
   geom_point() + 
   stat_smooth(method=lm) + 
   facet_wrap(~ english) + 
-  ggtitle("Effect of Ratings on Profit in English Movies vs. Others")
+  ggtitle("Effect of Ratings on Profit in English Movies vs. Others") + 
+  labs(x = "Average Movie Rating") + 
+  labs(y = "Profit")
 
 #ggplot(data = movies_metadata, mapping = aes(x = vote_count, y = profit, color = english, shape = english)) +
   #geom_point() +
@@ -164,6 +168,10 @@ After exploring the data, the following questions about the data have raised our
 2. Movies of which languages have the highest rating?
 3. Over time, how has the runtime of movies changed (i.e. Are movies getting longer or shorter?)
 4. Which companies produce the most popular movies?
+
+
+### Revenue vs. Budget  ###
+
 
 To answer the first question, we generated a scatterplot of the revenue against the budget of the films, as well as a scatterplot of the profit against the budget.
 ``` {r revenue, echo = FALSE}
@@ -186,14 +194,29 @@ ggplot(data = movies_metadata, mapping = aes(x = log10(budget), y = profit)) +
 
 In this dataset, most films have low profit, and this tendency seems to change only for films with high order of budget (10^7 ,10^8).
 
+### Languages with Highest Ratings  ###
+
 Moving on to the second question, we consider a histogram of the rating filled with the original language:
 ```{r average_language, echo = FALSE}
-ggplot(data = movies_metadata) + 
-    geom_bar(mapping = aes(x = vote_average, fill = original_language)) + 
-    ggtitle("Histogram of the average audience vote, filled by original language")
+ggplot(data = movies_metadata) +
+    geom_bar(mapping = aes(x = vote_average, fill = original_language)) +
+    ggtitle("Average Audience Vote, (filled by original language)") +
+  labs(x = "Average Movie Rating") +
+  labs(y = "Profit")
+
+movies_metadata %>%
+  
+  filter(!(original_language %in% c("ca", "et", "fa", "el", "kn", "nl", "ro", "sr"))) %>%
+  ggplot(mapping = aes(x = original_language, y = vote_average)) +
+  geom_boxplot()  + 
+  labs(y = "Average Rating")
+  
+
 ```
 
-Because of the vast majority of english films in the dataset, they tend to represent most of the extreme ratings, be it low or high. Moreover, english film ratings tend to concentrate around a rating of 6-7, corresponding to most other visible languages.
+Because of the vast majority of English films in the data set, they tend to represent most of the extreme ratings, be it low or high. Moreover, we can see that movies in english have a median rating of 6.5, which is lower than most other languages. We also notice that movies produced in Italian and Malayam have the highest ratings while those produced in Norwegian and Tamil have the lowest.
+
+### Movie Length vs. Time  ###
 
 We now focus on the runtime, looking at how it impacts audience score, profit, and how the mean runtime evolved through the last decenies, taking into account we do not consider durations under 10 minutes, as we filtered them out of our dataset.
 
@@ -205,20 +228,25 @@ for (i in 1:length(movies_metadata$release_date)) {
   movies_metadata$year[i] = as.numeric(substr(movies_metadata$release_date[i],1,4))
 }
 ```
+
 ``` {r runtime, echo = FALSE}
 
 ggplot(movies_metadata, mapping= aes(year,vote_average)) + 
      geom_point() + 
-     stat_smooth(method = lm) + ggtitle("Average public note of the films against the release year") ;
+     stat_smooth(method = lm) + ggtitle("Average Public Rating of Films Released Over Time") + 
+    labs(y = "Average Rating") ;
 
  ggplot(movies_metadata, mapping= aes(year,runtime)) + 
      geom_point() + 
-     stat_smooth(method = lm) + ggtitle("Evolution of the film durations along the years")
+     stat_smooth(method = lm) + ggtitle("Evolution of Film Duration Over Time")  + 
+  labs(y = "Duration")
 ```
 
 Clearly, there are more and more movies coming out over the decades. The average vote has a decreasing tendency over the years, maybe due to the increasing number of low quality films that comes with the facilitated access to production. Remarkable is also the fact that the average runtime stays around 100 min since around 1920, so it looks as if both covariates were uncorrelated.
 
-Lastly, we are going to investigate which of the following companies produce the most popular movies:
+### Production Companies with Most Popular Movies  ###
+
+Lastly, we are going to find out which of the following companies produce the most popular movies:
 
  - Paramount Pictures
  - DreamWorks
@@ -230,36 +258,85 @@ Lastly, we are going to investigate which of the following companies produce the
  Therefore, for this part, we will only work on a subset of the data, namely the films produced by these companies only. This retains 433 observations. We then consider the histogram of vote_average, variable that will serve as an indicator for public appreciation, in each case.
  
 ```{r companies, echo = FALSE}
+
 ### creates a variable containing the seeked production companies and NA otherwise to enable easy filtering : 
 movies_metadata$company = 1:length(movies_metadata$production_companies)
+paramount <- c()
+warner <- c()
+disney <- c()
+fox <- c()
+universal <- c()
+dreamworks <- c()
 for (i in 1:length(movies_metadata$company)) {
   if (grepl("Paramount",movies_metadata$production_companies[i])) {
     movies_metadata$company[i] = "Paramount Pictures"
+    paramount <- c(paramount, movies_metadata$vote_average[i])
   }
   else if (grepl("Warner Bros",movies_metadata$production_companies[i])) {
     movies_metadata$company[i] = "Warner Bros"
+    warner <- c(warner, movies_metadata$vote_average[i])
   }
   else if (grepl("Walt Disney", movies_metadata$production_companies[i])) {
     movies_metadata$company[i] = "Walt Disney"
+    disney <- c(disney, movies_metadata$vote_average[i])
+    
   }
   else if (grepl("Universal Pictures", movies_metadata$production_companies[i])) {
     movies_metadata$company[i] = "Universal Pictures"
+    universal <- c(universal, movies_metadata$vote_average[i])
   }
   else if (grepl("Fox Film Corp", movies_metadata$production_companies[i])) {
     movies_metadata$company[i] = "Fox Films"
+    fox <- c(fox, movies_metadata$vote_average[i])
   }
   else if (grepl("DreamWorks",movies_metadata$production_companies[i])) {
     movies_metadata$company[i] = "DreamWorks"
+    dreamworks <- c(dreamworks, movies_metadata$vote_average[i])
   }
   else {
     movies_metadata$company[i] = NA
   }
 }
+
+means = data.frame(
+  Paramount = mean(paramount),
+  WarnerBros = mean(warner),
+  WaltDisney = mean(disney),
+  FoxFilms = mean(fox),
+  UniversalPictures = mean(universal),
+  DreamWorks = mean(dreamworks)
+)
+
+movies_metadata %>%
+  filter(popularity < 50) %>%
+  filter(!is.na(company)) %>%
+  ggplot(mapping = aes(x = company, y = popularity)) +
+  geom_boxplot()
+
+movies_metadata %>%
+  
+  filter(!is.na(company)) %>%
+  ggplot(mapping = aes(x = company, y = vote_average)) +
+  geom_boxplot()  + 
+  labs(y = "Average Rating")
+
 ### histogram of vote average separated by prod. comp.
 
-ggplot(data = movies_metadata[complete.cases(movies_metadata),]) + ### filters out the NAs to retain only interesting values
-  geom_bar(mapping = aes(x = vote_average,fill = company)) +
-  facet_wrap(~ company) + ggtitle("Average popularity votes per film per company")
+# ggplot(data = movies_metadata[complete.cases(movies_metadata),]) + ### filters out the NAs to retain only interesting values
+#   geom_bar(mapping = aes(x = vote_average,fill = company)) +
+#   facet_wrap(~ company) + ggtitle("Average popularity votes per film per company")
 ```
 
-We draw the following observations from the picture above: each company has a somewhat different popularity repartition than the others; some look somewhat uniform, like DreamWorks and Fox Films, others normal like Universal Pictures, some skewed,... Notice the x scale ranges from 4 to 9, so these companies are mostly popular. In the end, it seems the company that attains the highest average value is Paramount Pictures, and the one that has the most popular films on average is Warner Bros.
+Before we analyze the results, it is important to point out that the popularity metric is not clearly explained in the resources from which we retrieved this dataset, so we are not sure why some movies have a higher rating than others. 
+
+The first graph shows us that movies produced by Walt Disney tend to have the highest popularity, followed closely by Paramount Pictures (which actually has the most popular movie in the data set: Minions). The production company with least popular movies was DreamWorks.
+
+Interestingly, the companies that produce the most popular movies are not necessarily those that produce movies with the highest ratings. Dreamworks (which produces the LEAST popular movies) produces movies with the highest average rating, while Walt Disney and Paramount Pictures (who produce the MOST popular movies) actually produce movies with the lowest average rating.
+
+## Conclusion
+
+After conducting some exploratory analysis on the data, we have 4 main conclusions:
+1. As movie budget increases, revenue generated and profit increases.
+2. Movies produced in Italian and Malayam have the highest ratings, wheras those produced in Norwegian and Tamil have the lowest
+3. Duration of movies has not changed much over time (although the ratings have decreased)
+4. Movies produced by Walt Disney and Paramount Pictures have the highest popularity and lowest ratings, while those produced by DreamWorks have the lowest popularity and highest ratings
