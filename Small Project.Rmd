@@ -340,3 +340,13 @@ After conducting some exploratory analysis on the data, we have 4 main conclusio
 2. Movies produced in Italian and Malayam have the highest ratings, wheras those produced in Norwegian and Tamil have the lowest
 3. Duration of movies has not changed much over time (although the ratings have decreased)
 4. Movies produced by Walt Disney and Paramount Pictures have the highest popularity and lowest ratings, while those produced by DreamWorks have the lowest popularity and highest ratings
+
+
+
+### Individual Contributions:
+
++ Issam (359405): Took part in researching the data and writing up the description. Also conducted some exploration of data (not shown here). Partially solved the second and fourth questions. Merged the individual contributions of other team members and formatted the HTML file.
+
++ Emanuele: I started the project firstly cleaning the dataset from useless datas. I continued my work manipulating a little dataset, for example adding new coloumns. Then I started exploring the dataset, noticing and plotting some interesting correlations from the dataset.
+
++ Eric (315663): Contributed to producing plots and exploring the data, mainly on the runtime and different production companies. Additionally, he participated to analyse the results and redacting the document.
