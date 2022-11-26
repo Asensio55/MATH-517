@@ -1,0 +1,106 @@
+---
+title: "A5"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(dplyr)
+```
+
+
+After creating 50 samples using each method, I noticed that the Rejection Sampling method generates samples significantly longer. Therefore, I plotted the runtimes for rmnorm and Box-muller together, and the Rejection Sampling alone. We can also see that the Box-Muller method takes more time than simply using thr rnorm function.
+
+```{r warning=FALSE, message=FALSE}
+Method = vector(length = 100)
+RunTime = vector(length = 100)
+KS = vector(length = 100)
+
+M <- optimize(f=function(x){dnorm(x)/dexp(abs(x))*2}, interval=c(0,5),maximum=T)$objective
+
+# returns a single accepted sample from standard doubly exp. proposal and N(0,1) target
+acc_rej_dexp_norm <- function(M,a,b){
+  U <- runif(1)*M
+  sings <- c(-1,1)
+  Y <- rexp(1)*sample(sings,1) # doubly exponential
+  while (U>dnorm(Y)/dexp(abs(Y))/2/M){
+    U <- runif(1)*M
+    Y <- rexp(1)*sample(sings,1)
+  }
+  return(Y)
+}
+
+
+
+
+for (i in 1:50){
+  t <- Sys.time()
+  X <- rnorm(n=100000)
+  RunTime[i] <- (Sys.time() - t)
+  F_hat <- ecdf(X)
+  F_hat_eval <- F_hat(sort(X))
+  F_eval <- pnorm(sort(X))
+  KS_stats <- max(abs(F_hat_eval - F_eval))
+  KS[i] <- KS_stats
+  Method[i] = "rmnorm"
+}
+
+
+
+for (i in 1:50){
+  t <- Sys.time()
+  
+  u1 <- runif(n=50000)
+  u2 <- runif(n=50000)
+  z1 <- (-2 * log(u1)) ** (1/2)* cos(2 * pi * u2)
+  z2 <- (-2 * log(u1)) ** (1/2)* sin(2 * pi * u2)
+  X <- c(z1, z2)
+  
+  RunTime[50 + i] <- (Sys.time() - t)
+  
+  F_hat <- ecdf(X)
+  F_hat_eval <- F_hat(sort(X))
+  F_eval <- pnorm(sort(X))
+  KS_stats <- max(abs(F_hat_eval - F_eval))
+  KS[50 + i] <- KS_stats
+  Method[50 + i] = "Box-Muller"
+}
+
+
+df <- data.frame(RunTime, KS, Method)
+ggplot(data = df, mapping = aes(x = RunTime, y = KS, shape = Method, color = Method)) + geom_point() + stat_smooth(method=lm)
+
+```
+
+```{r warning=FALSE, message=FALSE}
+
+Method = vector(length = 50)
+RunTime = vector(length = 50)
+KS = vector(length = 50)
+
+
+
+for (i in 1:50){
+  t <- Sys.time()
+  
+  X <- vector(length = 100000)
+  for(n in 1:100000){
+    X[n] <- acc_rej_dexp_norm(M)
+  }
+  
+  RunTime[i] <- (Sys.time() - t)
+  
+  F_hat <- ecdf(X)
+  F_hat_eval <- F_hat(sort(X))
+  F_eval <- pnorm(sort(X))
+  KS_stats <- max(abs(F_hat_eval - F_eval))
+  KS[i] <- KS_stats
+  Method[i] = "Rejection Sampling"
+}
+
+df <- data.frame(RunTime, KS, Method)
+ggplot(data = df, mapping = aes(x = RunTime, y = KS, shape = Method, color = Method)) + geom_point() + stat_smooth(method=lm)
+
+```
+
