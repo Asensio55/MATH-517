@@ -1,0 +1,117 @@
+---
+title: "A7"
+output:
+  html_document:
+    df_print: paged
+    
+header-includes:
+  - \usepackage{bm}
+  - \newcommand{\E}{\mathbb{E}}
+  - \newcommand{\R}{\mathbb{R}}
+  - \newcommand{\argmin}{\mathrm{arg\,min\;}}
+  - \newcommand{\rank}{\mathrm{rank}}
+  - \newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}\def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(dplyr)
+```
+
+
+```{r}
+studentized_Tstar <- function(Xstar,X){
+return( (mean(Xstar)-mean(X))/sd(Xstar)*sqrt(N))
+}
+
+non_studentized_Tstar <- function(Xstar,X){
+return( (mean(Xstar)-mean(X))*sqrt(N))
+}
+
+sample_truth_scaled_Tstar <- function(Xstar,X){
+return( (mean(Xstar)-mean(X))/sd(X)*sqrt(N))
+}
+
+```
+
+
+
+```{r}
+lambda <- 2
+N <- 100
+B <- 1000
+asymptotic_frequency <- 0
+studentized_frequency <- 0
+non_studentized_frequency <- 0
+sample_truth_scaled_frequency <- 0
+
+
+for (i in 1:1000){
+  X <- rexp(N,lambda)
+  
+  studentized_Tstars <- rep(0,B)
+  non_studentized_Tstars <- rep(0,B)
+  sample_truth_scaled_Tstars <- rep(0,B)
+  
+  
+  #Generate a bootsrap
+  boot_ind <- sample(1:N, size=N*B, replace=T)
+  boot_data <- matrix(X[boot_ind],ncol=B)
+  
+  for (i in 1:B){
+    studentized_Tstars[i] <- studentized_Tstar(boot_data[,i],X)
+    non_studentized_Tstars[i] <- non_studentized_Tstar(boot_data[,i],X)
+    sample_truth_scaled_Tstars[i] <- sample_truth_scaled_Tstar(boot_data[,i],X)
+  }
+  
+  
+  #calculate asymptotic confidence interval
+  CI_asymptotic <- mean(X) + qnorm(0.95)*sd(X)/sqrt(N)
+  if (CI_asymptotic > 0.5){
+    asymptotic_frequency <- asymptotic_frequency + 1
+  }
+  
+  #calculate studentized (bootstrap) confidence interval
+  CI_studentized <- mean(X) + quantile(studentized_Tstars,0.95)*sd(X)/sqrt(N)
+  if (CI_studentized > 0.5){
+    studentized_frequency <- studentized_frequency + 1
+  }
+  
+  #calculate non_studentized confidence interval
+  CI_non_studentized <- mean(X) + quantile(non_studentized_Tstars,0.95)/sqrt(N)
+  if (CI_non_studentized > 0.5){
+    non_studentized_frequency <- non_studentized_frequency + 1
+  }
+  
+  #calculate sample_truth_scaled confidence interval
+  CI_sample_truth_scaled <- mean(X) + quantile(sample_truth_scaled_Tstars,0.95)*sd(X)/sqrt(N)
+  if (CI_sample_truth_scaled > 0.5){
+    sample_truth_scaled_frequency <- sample_truth_scaled_frequency + 1
+  }
+  
+  
+}
+
+```
+
+
+For this assignment, for $X_1,\ldots,X_{100}$ independently retrieved from $Exp(2)$, I considered the following CIs for $\E X_1 = 1/2$:
+
+* asymptotic: $\left(-\infty, \bar{X}_N + \frac{\widehat{\sigma}}{\sqrt{N}} z(\alpha) \right)$
+* studentized (bootstrap): $\left(-\infty, \bar{X}_N + \frac{\widehat{\sigma}}{\sqrt{N}} q^\star(\alpha) \right)$ with $T^\star = \sqrt{N}\frac{\bar{X}_N^\star - \bar{X}_N}{\widehat{\sigma}^\star}$
+* non-studentized ($\star$): $\left(-\infty, \bar{X}_N + \frac{1}{\sqrt{N}} q^\star(\alpha) \right)$ with $T^\star = \sqrt{N}\big(\bar{X}_N^\star - \bar{X}_N\big)$
+* sample-truth-scaled ($\star$): $\left(-\infty, \bar{X}_N + \frac{\widehat{\sigma}}{\sqrt{N}} q^\star(\alpha) \right)$ with $T^\star = \sqrt{N}\frac{\bar{X}_N^\star - \bar{X}_N}{\widehat{\sigma}}$
+
+For each interval, I verified the coverage of the interval via a simulation study of 1000 runs. Below is the report of the coverage proportions of each interval.
+
+From the table, we can see that the coverage of all the intervals are similar (90%-95%). The studentized interval had the lowest coverage, with around 90%, while the rest of the intervals have similar coverages of around 93%.
+
+
+```{r}
+
+freq_data <- tibble(Asymptotic=asymptotic_frequency/1000, Studentized=studentized_frequency/1000, Non_studentized=non_studentized_frequency/1000, Sample_truth_scaled=sample_truth_scaled_frequency/1000)
+
+print(freq_data)
+
+```
