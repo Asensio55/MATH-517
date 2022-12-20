@@ -1,0 +1,75 @@
+---
+title: "A8"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(dplyr)
+```
+
+The true posterior densities and the proposal densities of the MCMC samples for the three considered values of y. We can see that as y increases, the graph becomes smoother.
+
+```{r}
+dposterior <- function(x, y, scale = 1.2, sd = .6) {
+  # x: evaluation points of the density
+  # y: observation Y=y (length 1),
+  # scale: scale parameter of Weibull prior (shape=2 fixed)
+  # sd: standard deviation of Gaussian error (mean=0 fixed)
+  a <- 1/2*1/sd^2; c <- 1/scale^2
+  erf <- function(x) 2*pnorm(x*sqrt(2)) - 1
+  k <- ifelse(x >= 0, x * exp( -a * (x-y)^2 - c*x^2 ), 0)
+  n <- exp(-a*(y^2)) *
+    (sqrt(pi) * a * y * exp(a^2*y^2 / (a+c)) * 
+       (erf(a*y/sqrt(a+c)) + 1) + 
+       sqrt(a + c) ) / (2* (a+c)^(3/2))
+  k/n
+}
+
+
+ys = list(0.5, 1, 2)
+
+for (y in ys)
+{
+  
+x = rep(0, 1000)
+start = y 
+x[1] = start
+for (i in 2:1000) {
+  u = rnorm(1, y, 0.6)
+  acc = min(1, dnorm(x[i-1], y, 0.6) * dnorm(y, mean = u, sd = 0.6) * dweibull(u, shape = 2, scale = 1.2) / 
+              (dnorm(u, y, 0.6) * dnorm(y, mean = x[i-1], sd = 0.6) * dweibull(x[i-1], shape = 2, scale = 1.2)))
+  prob = runif(1)
+  if (acc > prob) {
+    x[i] = u
+  }
+  else {
+    x[i] = x[i-1]
+  }
+ }
+  
+x = rep(0, 10000)
+start = y 
+x[1] = start
+for (i in 2:10000) {
+  u = rnorm(1, y, 0.6)
+  acc = min(1, dnorm(x[i-1], y, 0.6) * dnorm(y, mean = u, sd = 0.6) * dweibull(u, shape = 2, scale = 1.2) / 
+              (dnorm(u, y, 0.6) * dnorm(y, mean = x[i-1], sd = 0.6) * dweibull(x[i-1], shape = 2, scale = 1.2)))
+  prob = runif(1)
+  if (acc > prob) {
+    x[i] = u
+  }
+  else {
+    x[i] = x[i-1]
+  }
+ }
+
+x_seq =  seq(from = -1, to = 3, by = 0.01)
+z = dposterior(x_seq, y)
+plot(density(x), main = y, xlab= "Samples", ylab="Densities") 
+lines(x_seq, z, col = "orange")
+}
+```
