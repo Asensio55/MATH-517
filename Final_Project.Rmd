@@ -1,0 +1,37 @@
+---
+title: 'Statistical Computation and Visualization: Final Project'
+author: "Issam Arabi, Eric Maeder"
+date: "2022-12-20"
+output: html_document
+bibliography: references.bib
+link-citations: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Comparison of Local Regression in different R packages.
+
+# Introduction
+When applying statistical methods in R using built functions, it is common to be confronted to multiple possible functions and packages aiming to tackle the same issues. In this scenario, and especially when dealing with large amounts of data, it is crucial yet difficult to choose the better optimized one towards fulfilling one's goals. Optimization denotes here both a measure of performance in the results and in the computation time.
+
+In this context, we aim to explore the different R packages aiming to implement local polynomial interpolation and their performance by applying them and timing their execution on specifically chosen data sets of different sizes and different structures to properly assess their versatility.
+
+# Plan
+In this report, we will be following the structure from the work of  @deng2011density conducting a similar analysis on density estimation. Effectively, we will start with a small introduction to local polynomial regression, followed by the description of the different R packages we are to examine. Then, we will at the computation time of the different functions when applied to datasets of increasing sizes. Next, we will measure the performance of the considered functions when dealing with data sets with more challenging structures. Afterwards, we will discuss the results, and lastly, we will summarize our results and conclude.
+
+# Local Polynomial Regression
+Local Polyinomial regression, most widely known through the Locally Estimated Scatterplot Smoothing (LOESS) method, is a powerful prediction tool when observing bounded data sets with non-trivial distributions. It is a non-parametric method, which allows it to be versatile and easy to use. 
+
+When observing response values $Y_1, Y_2, ...$ at points $X_1, X_2, ...$, the aim of local polynomial regression is to assign at each point X the value corresponding to $\underset{\beta \in \mathbb{R}^{p+1}}{argmin} [Y_i - \beta_0 - \beta_1(X_i - x) - ... - \beta_p (X_i - x)^p]K(\frac{X_i - x}{h})$, where p is the order of the fitted polynomial, K is a kernel function (basically a weighting function), and h is a bandwidth parameter allowing to choose how strong the influence of distant observations on the regression should be. 
+
+Then, the resulting polynomials are combined and smoothed to obtain a curve spanning the whole considered region. In practice, polynomial degrees p < 4 are mostly used due to the increasingly computational challenge, which is also the approach we will adopt in this report.
+
+# Local Polynomial Regression Packages
+
+
+
+
+
+# References
