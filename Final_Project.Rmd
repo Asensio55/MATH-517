@@ -34,19 +34,19 @@ In this section, we give a quick overview of the considered functions and their 
 
 + stats::loess, from its documentation, fits a locally polynomial surface determined by one or more numerical predictors, using local fitting. its typical call is as follow:
 
-loess(formula, data, weights, subset, na.action, model = FALSE,
-      span = 0.75, enp.target, degree = 2,
-      parametric = FALSE, drop.square = FALSE, normalize = TRUE,
-      family = c("gaussian", "symmetric"),
-      method = c("loess", "model.frame"),
-      control = loess.control(...), ...)
+loess(formula, data, weights, subset, na.action, model = FALSE,  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      span = 0.75, enp.target, degree = 2,  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      parametric = FALSE, drop.square = FALSE, normalize = TRUE,  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      family = c("gaussian", "symmetric"),  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      method = c("loess", "model.frame"),  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      control = loess.control(...), ...)
       
 But in our case, we will be working on fully-specified data sets with no missing data and no prior information about value importance, so we will only use the following:
 
-loess(formula, (data), 
-      span = 0.75, degree = 2,
-      family = "gaussian"
-      method = "loess")
+loess(formula, (data),  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      span = 0.75, degree = 2,  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      family = "gaussian"  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      method = "loess")
       
 where we give our response and explanatory variables in formula, span controls the bandwidth, degree is self-explanatory and family specifies we want a least-squares approach. 
 The span parameter works as follows: when given a value smaller than 1, each local regression is fitted using the proportion of observations equal to the span value into account, with tricubic weighting (1- (distance to point/maximal distance to considered points)^3)^3. 
@@ -55,8 +55,8 @@ This approach prevents cases of badly spread data where no observation is in the
 
 + locpol::locpol, follows the steps of the local polynomial regression described in the previous section. Its call is as follows:
 
-locpol(formula,data,weig=rep(1,nrow(data)),bw=NULL,kernel=EpaK,deg=1,
-xeval=NULL,xevalLen=100)
+locpol(formula,data,weig=rep(1,nrow(data)),bw=NULL,kernel=EpaK,deg=1,  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    xeval=NULL,xevalLen=100)
 
 again, we will not use all parameters for comparison in this report, although they offer room for versatility. Therefore, we will mostly use:
 
@@ -67,19 +67,27 @@ This follows closely the theoretical approach we chose.
 
 + KernSmooth::locpoly aims to fit a local polynomial with kernel weighting to estimate a regression function. It can also be used towards density estimation and their derivatives. We call it as follows:
 
-locpoly(x, y, drv = 0L, degree, kernel = "normal", 
-        bandwidth, gridsize = 401L, bwdisc = 25, 
-        range.x, binned = FALSE, truncate = TRUE)
+locpoly(x, y, drv = 0L, degree, kernel = "normal",  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    bandwidth, gridsize = 401L, bwdisc = 25,  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    range.x, binned = FALSE, truncate = TRUE)
 
 Here, x,y are the explanatory and response variables, drv concerns derivative estimations, kernel and bandwidth are self-explanatory, gridsize represents the number of equidistant points over which we want to estimate the fct, and the last parameters are used to speed up computations when the data is pre-processed. This approach is pretty similar to locpol, and as such to our theoretical version. The similarity in input parameters makes it easy to compare both of them.
 
 + fANCOVA::loess.as performs local polynomial regression with automatic bandwidth selection using either cross-validation or AIC as criterion. It also has an option to select it manually, which we will use towards comparison. below the usage:
 
-loess.as(x, y, degree = 1, criterion = c("aicc", "gcv"), 
-		family = c("gaussian", "symmetric"), user.span = NULL, 
-		plot = FALSE, ...)
+loess.as(x, y, degree = 1, criterion = c("aicc", "gcv"),  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	family = c("gaussian", "symmetric"), user.span = NULL,  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	plot = FALSE, ...)
 		
 where x,y,degree, criterion are self-explanatory. We will use here the gaussian family corresponding to the Least Squares approach, and user.span is a manual smoothing parameter selection (bandwidth value e.g.). plot is an option to generate a visualization of the results.
+
+# Comparison of Computation times
+
+# Comparison of approximation residuals
+
+# General Results and Discussion
+
+# Conclusion
 
 # comments (to do)
 Add references to packages / fcts documentation in according section.
