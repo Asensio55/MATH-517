@@ -16,6 +16,9 @@ body(caret::knnreg)
 
 # loess.as{fANCOVA}
 ### Plan: find datasets of different sizes, noise them or generate them (powers of 10)
-### apply loess, locpol, locfit, time it. Check performance. maybe knn ?
+### apply loess, locpol, locfit,locpoly (kernsmooth) time it. Check performance.
 # https://stat.ethz.ch/R-manual/R-devel/library/stats/html/loess.html  https://search.r-project.org/CRAN/refmans/locfit/html/locfit.raw.html
+# https://www.rdocumentation.org/packages/KernSmooth/versions/2.23-20/topics/locpoly
 
+
+### I'd say we use loess.as, locpol, loess, locpoly only, as the other ones kinda have mean parameter selection. Maybe drop Loess as well ?
