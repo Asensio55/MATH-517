@@ -24,7 +24,8 @@ In this report, we will be following the structure from the work of  @deng2011de
 # Local Polynomial Regression
 Local Polyinomial regression, most widely known through the Locally Estimated Scatterplot Smoothing (LOESS) method, is a powerful prediction tool when observing bounded data sets with non-trivial distributions. It is a non-parametric method, which allows it to be versatile and easy to use. 
 
-When observing response values $Y_1, Y_2, ...$ at points $X_1, X_2, ...$, the aim of local polynomial regression is to assign at each point X the value corresponding to $\underset{\beta \in \mathbb{R}^{p+1}}{argmin} [Y_i - \beta_0 - \beta_1(X_i - x) - ... - \beta_p (X_i - x)^p]K(\frac{X_i - x}{h})$, where p is the order of the fitted polynomial, K is a kernel function (basically a weighting function), and h is a bandwidth parameter allowing to choose how strong the influence of distant observations on the regression should be. 
+When observing response values $Y_1, Y_2, ...$ at points $X_1, X_2, ...$, the aim of local polynomial regression is to assign at each point X the value corresponding to $\underset{\beta \in \mathbb{R}^{p+1}}{argmin} \sum_{i=1}^n [Y_i - \beta_0 - \beta_1(X_i - x) - ... - \beta_p (X_i - x)^p]^2 K(\frac{X_i - x}{h})$, where p is the order of the fitted polynomial, K is a kernel function (basically a weighting function), and h is a bandwidth parameter allowing to choose how strong the influence of distant observations on the regression should be.  
+As we can see, this is a least squares problem, and although the solution is long and unexciting to produce, it comes down to computing a gradient and solving a relatively simple system of equations.
 
 Then, the resulting polynomials are combined and smoothed to obtain a curve spanning the whole considered region. In practice, polynomial degrees p < 4 are mostly used due to the increasingly computational challenge, which is also the approach we will adopt in this report.
 
@@ -32,7 +33,7 @@ Then, the resulting polynomials are combined and smoothed to obtain a curve span
 
 In this section, we give a quick overview of the considered functions and their parameters.
 
-+ stats::loess, from its documentation, fits a locally polynomial surface determined by one or more numerical predictors, using local fitting. its typical call is as follow:
++ **stats::loess**, @stats, from its documentation, fits a locally polynomial surface determined by one or more numerical predictors, using local fitting. its typical call is as follow: 
 
 loess(formula, data, weights, subset, na.action, model = FALSE,  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      span = 0.75, enp.target, degree = 2,  
@@ -53,7 +54,7 @@ The span parameter works as follows: when given a value smaller than 1, each loc
 
 This approach prevents cases of badly spread data where no observation is in the considered bandwidth when fitting a local regression, making it unstable, at the cost of computing the distance to each data point. Moreover, this makes it difficult to compare to other functions, as we cannot give them exactly the same inputs.
 
-+ locpol::locpol, follows the steps of the local polynomial regression described in the previous section. Its call is as follows:
++ **locpol::locpol**, @locpol, follows the steps of the local polynomial regression described in the previous section. Its call is as follows: 
 
 locpol(formula,data,weig=rep(1,nrow(data)),bw=NULL,kernel=EpaK,deg=1,  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    xeval=NULL,xevalLen=100)
@@ -65,7 +66,7 @@ locpol(formula,(data),bw=NULL,kernel=EpaK,deg=1)
 where formula, data and deg are identical to the loess function. The bw parameter is the bandwidth, and the kernel is the kernel function, Epanechnikov by default, but can be gaussian, uniform,...
 This follows closely the theoretical approach we chose.
 
-+ KernSmooth::locpoly aims to fit a local polynomial with kernel weighting to estimate a regression function. It can also be used towards density estimation and their derivatives. We call it as follows:
++ **KernSmooth::locpoly**, @kernsmooth, aims to fit a local polynomial with kernel weighting to estimate a regression function. It can also be used towards density estimation and their derivatives. We call it as follows:
 
 locpoly(x, y, drv = 0L, degree, kernel = "normal",  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    bandwidth, gridsize = 401L, bwdisc = 25,  
@@ -73,13 +74,19 @@ locpoly(x, y, drv = 0L, degree, kernel = "normal",
 
 Here, x,y are the explanatory and response variables, drv concerns derivative estimations, kernel and bandwidth are self-explanatory, gridsize represents the number of equidistant points over which we want to estimate the fct, and the last parameters are used to speed up computations when the data is pre-processed. This approach is pretty similar to locpol, and as such to our theoretical version. The similarity in input parameters makes it easy to compare both of them.
 
-+ fANCOVA::loess.as performs local polynomial regression with automatic bandwidth selection using either cross-validation or AIC as criterion. It also has an option to select it manually, which we will use towards comparison. below the usage:
++ **fANCOVA::loess.as**, @fancova, performs local polynomial regression with automatic bandwidth selection using either cross-validation or AIC as criterion. It also has an option to select it manually, which we will use towards comparison. below the usage:
 
 loess.as(x, y, degree = 1, criterion = c("aicc", "gcv"),  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	family = c("gaussian", "symmetric"), user.span = NULL,  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	plot = FALSE, ...)
 		
 where x,y,degree, criterion are self-explanatory. We will use here the gaussian family corresponding to the Least Squares approach, and user.span is a manual smoothing parameter selection (bandwidth value e.g.). plot is an option to generate a visualization of the results.
+
+# Other more specific local regressions
+
++ **caret::knnreg** ,@caret, and other k-nearest neighbors approaches, are a substitute to the bandwidth approach, making sure that isolates on the x-axis do not have too much impact on the results by always taking at least k observations into account. 
+
++ **spgwr::gwr**, @spgwr, performs a geographically weighted regression; a special type of local regression applicable to spatially ordered data, taking into account the distance of each observations into account when fitting a local estimate.
 
 # Comparison of Computation times
 
