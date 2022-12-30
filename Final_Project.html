@@ -264,6 +264,46 @@ As we can see, this is a least squares problem, and although the solution is lon
 </div>
 <div id="comparison-of-computation-times" class="section level1">
 <h1>Comparison of Computation times</h1>
+<pre class="r"><code>X4 &lt;- seq(from = -5, to = 5, by= 0.01)
+d4 &lt;- dnorm(X4)
+df4 &lt;-data.frame(X4,d4)
+lo &lt;- 0
+lp &lt;- 0
+loas &lt;- 0
+loly &lt;- 0
+
+for (i in 1:1000){
+  t &lt;- Sys.time()
+  loess(d4 ~ X4, data = df4, family = &quot;gaussian&quot;, method = &quot;loess&quot;, span = 0.075)
+  lo &lt;- lo + Sys.time() - t
+}
+
+for (i in 1:1000){
+  t &lt;- Sys.time()
+  locpol(d4 ~ X4, data = df4, bw = 0.025, kernel = gaussK, deg = 2)
+  lp &lt;- lp + Sys.time() - t
+}
+
+for (i in 1:1000){
+  t &lt;- Sys.time()
+  loess.as(df4$X4, df4$d4, degree = 2, criterion = &quot;aicc&quot;, family = &quot;gaussian&quot;)
+  loas &lt;- loas + Sys.time() - t
+}
+
+for (i in 1:1000){
+  t &lt;- Sys.time()
+  locpoly(df4$X4, df4$d4, degree = 2, kernel = &quot;normal&quot;, bandwidth = 0.025, gridsize = 1001)
+  loly &lt;-loly  + Sys.time() - t
+}</code></pre>
+<p>To compare computation times for the functions, we run each of them for 1000 times and compare the average runtime. Below are the results.</p>
+<pre class="r"><code>freq_data &lt;- tibble(loess=lo/1000, locpol=lp/1000, loess.as=loas/1000, locpoly=loly/1000)
+
+print(freq_data)</code></pre>
+<pre><code>## # A tibble: 1 × 4
+##   loess            locpol          loess.as         locpoly          
+##   &lt;drtn&gt;           &lt;drtn&gt;          &lt;drtn&gt;           &lt;drtn&gt;           
+## 1 0.002894936 secs 0.01810172 secs 0.001225361 mins 0.0004528432 secs</code></pre>
+<p>From this data, we can see that loess.as takes much more time than the rest of the functions, followed by locpol, then loess. The most computationally efficient function was locpoly.</p>
 </div>
 <div id="comparison-of-approximation-residuals" class="section level1">
 <h1>Comparison of approximation residuals</h1>

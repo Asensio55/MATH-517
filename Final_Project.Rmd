@@ -9,6 +9,13 @@ link-citations: true
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+
+library(tidyverse)
+library(dplyr)
+library(locpol)
+library(fANCOVA)
+library(KernSmooth)
 ```
 
 ## Comparison of Local Regression in different R packages.
@@ -89,6 +96,57 @@ where x,y,degree, criterion are self-explanatory. We will use here the gaussian 
 + **spgwr::gwr**, @spgwr, performs a geographically weighted regression; a special type of local regression applicable to spatially ordered data, taking into account the distance of each observations into account when fitting a local estimate.
 
 # Comparison of Computation times
+
+```{r}
+
+X4 <- seq(from = -5, to = 5, by= 0.01)
+d4 <- dnorm(X4)
+df4 <-data.frame(X4,d4)
+lo <- 0
+lp <- 0
+loas <- 0
+loly <- 0
+
+for (i in 1:1000){
+  t <- Sys.time()
+  loess(d4 ~ X4, data = df4, family = "gaussian", method = "loess", span = 0.075)
+  lo <- lo + Sys.time() - t
+}
+
+for (i in 1:1000){
+  t <- Sys.time()
+  locpol(d4 ~ X4, data = df4, bw = 0.025, kernel = gaussK, deg = 2)
+  lp <- lp + Sys.time() - t
+}
+
+for (i in 1:1000){
+  t <- Sys.time()
+  loess.as(df4$X4, df4$d4, degree = 2, criterion = "aicc", family = "gaussian")
+  loas <- loas + Sys.time() - t
+}
+
+for (i in 1:1000){
+  t <- Sys.time()
+  locpoly(df4$X4, df4$d4, degree = 2, kernel = "normal", bandwidth = 0.025, gridsize = 1001)
+  loly <-loly  + Sys.time() - t
+}
+
+
+
+
+```
+
+To compare computation times for the functions, we run each of them for 1000 times and compare the average runtime. Below are the results.
+
+```{r}
+
+freq_data <- tibble(loess=lo/1000, locpol=lp/1000, loess.as=loas/1000, locpoly=loly/1000)
+
+print(freq_data)
+
+```
+
+From this data, we can see that loess.as takes much more time than the rest of the functions, followed by locpol, then loess. The most computationally efficient function was locpoly.
 
 # Comparison of approximation residuals
 
