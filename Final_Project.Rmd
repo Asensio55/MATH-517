@@ -3,7 +3,7 @@ title: 'Statistical Computation and Visualization: Final Project'
 author: "Issam Arabi, Eric Maeder"
 date: "2022-12-20"
 output: html_document
-bibliography: references.bib
+bibliography: Z:/Stat_Comp_Project/references.bib
 link-citations: true
 ---
 
@@ -16,6 +16,9 @@ library(dplyr)
 library(locpol)
 library(fANCOVA)
 library(KernSmooth)
+library(wavethresh)
+library(ggplot2)
+library(patchwork)
 ```
 
 ## Comparison of Local Regression in different R packages.
@@ -149,6 +152,494 @@ print(freq_data)
 From this data, we can see that loess.as takes much more time than the rest of the functions, followed by locpol, then loess. The most computationally efficient function was locpoly.
 
 # Comparison of approximation residuals
+
+Now, we delve into the comparison of the fit produced by the different functions, applied on the same datasets. To do so, we use two families of different datasets: one stemming from the gaussian distribution added to a sinusoidal factor, and one originating from the claw distribution noised @wavethresh. For both families, we look at samples of size $10^2,10^3,10^4$ and $10^5$. On each of those, we apply the four considered functions and we calculate the $R^2$ value, representing the goodness of fit (coefficient of determination). This allows for comparison both between different functions on the same datasets and for the same function on different sizes of datasets.  
+Worth to keep in mind is that two of the functions take a span parameter into account, denoting a percentage of the datapoints to consider, and the two others a bandwidth parameter. This implies the two first will not be meaningfully comparable to the latters, as we do not run any algorithm, such as cross-validation, to choose a bandwidth parameter. For the span parameter, since such an algorithm is already implemented in the loess.as function, we run the loess function with the resulting parameter to have comparatively similar performances.  
+Since locpol function is un-applicable to datasets too large, we set the resulting R2 to 0 on the last plot.  
+We output the different fit functions, tables of the $R^2$ coefficients, and lastly a plot of the coefficients of determination on each dataset size.
+
+Let us start with the smaller datasets:
+``` {r c2, echo = FALSE}
+X3 <- seq(from = -5, to = 5, by= 0.1)
+X4 <- seq(from = -5, to = 5, by= 0.01)
+X5 <- seq(from = -5, to = 5, by= 0.001)
+X6 <- seq(from = -5, to = 5, by= 0.0001)
+X7 <- seq(from = -5, to = 5, by= 0.00001) # X-axis evaluation points
+
+Y3 <- dclaw(X3) # claw distribution
+n3 <- rnorm(X3, sd = 0.1) # gaussian noise
+Y3 <- Y3 + n3
+
+# applying the functions:
+daf3 <- data.frame(X3,Y3)
+Lo3c <- loess(Y3 ~ X3, data = daf3, family = "gaussian", method = "loess", span = 0.587) # Lo3c$residuals
+Lpc3 <- locpol(Y3 ~ X3, data = daf3, bw = 0.25, kernel = gaussK, deg = 2) # Lpc3$residuals
+Loasc3 <- loess.as(daf3$X3, daf3$Y3, degree = 2, criterion = "aicc", family = "gaussian") # Loasc3$residuals
+LoLyc3 <- locpoly(daf3$X3, daf3$Y3, degree = 2, kernel = "normal", bandwidth = 0.25, gridsize = 101) # only gives results
+
+
+# R^2 coefficients
+#Loess
+SSres <- sum((Y3 - Lo3c$fitted)^2)
+SStot <- sum((Y3 - mean(Y3))^2)
+R2Lo3 <- 1 - SSres/SStot
+#Locpol
+SSres <- sum((Y3 - Lpc3$mf[1])^2)
+SStot <- sum((Y3 - mean(Y3))^2)
+R2Lp3 <- 1 - SSres/SStot
+#Loess.as
+SSres <- sum((Y3 - Loasc3$fitted)^2)
+SStot <- sum((Y3 - mean(Y3))^2)
+R2Loas3 <- 1 - SSres/SStot
+#locpoly
+SSres <- sum((Y3 - LoLyc3$y)^2)
+SStot <- sum((Y3 - mean(Y3))^2)
+R2Loly3 <- 1 - SSres/SStot
+
+#plot
+fitted_loc <- Lo3c$fitted
+fitted_lp <- Lpc3$mf[1]
+fitted_loas <- Loasc3$fitted
+fitted_Loly <- LoLyc3$y
+
+
+pc2 <- ggplot() + geom_point(mapping = aes(x = X3, y = fitted_loc, color = "loess")) + 
+  geom_point(mapping = aes(x = X3, y = unlist(fitted_lp), color = "locpol")) + 
+  geom_point(mapping = aes(x = X3, y = fitted_loas, color = "loess.as")) + 
+  geom_point(mapping = aes(x = X3, y = fitted_Loly, color = "locpoly")) + 
+  scale_color_manual(name = "Regression Function",
+                     values = c( "loess" = "blue", "locpol" = "red", "loess.as" = "green", "locpoly" = "purple"),
+                     labels = c("loess", "locpol", "loess.as","locpoly")) + 
+  labs(y = "fit") +
+  ggtitle("Claw distribution, 10^2 data points")
+
+pc2
+```
+
+For now, we cannot really see the claws emerging from the distribution, but that is only due to the inaccuracy induced by the small sample size, as the locpol function produces an R^2 of 1, meaning it approximates the function perfectly. The others underfit a bit, leading to smaller values and worse approximation. However, that might not be a bad result, as we are a priori with so little data not sure we should fit the data so precisely in fear of overfitting. 
+
+Let us look at what changes when we consider a superior order of magnitude:
+```{r c3, echo = FALSE}
+## 1001
+#Distribution
+Y4 <- dclaw(X4)
+n4 <- rnorm(X4, sd = 0.1)
+Y4 <- Y4 + n4
+
+# Application
+daf4 <- data.frame(X4,Y4)
+Lo4c <- loess(Y4 ~ X4, data = daf4, family = "gaussian", method = "loess", span = 0.211) # Lo3c$residuals
+Lpc4 <- locpol(Y4 ~ X4, data = daf4, bw = 0.25, kernel = gaussK, deg = 2) # Lpc3$residuals
+Loasc4 <- loess.as(daf4$X4, daf4$Y4, degree = 2, criterion = "aicc", family = "gaussian") # Loasc3$residuals
+LoLyc4 <- locpoly(daf4$X4, daf4$Y4, degree = 2, kernel = "normal", bandwidth = 0.25, gridsize = 1001) # only gives results
+
+
+# R^2 coefficients
+#Loess
+SSres <- sum((Y4 - Lo4c$fitted)^2)
+SStot <- sum((Y4 - mean(Y4))^2)
+R2Lo4 <- 1 - SSres/SStot
+#Locpol
+SSres <- sum((Y4 - Lpc4$mf[1])^2)
+SStot <- sum((Y4 - mean(Y4))^2)
+R2Lp4 <- 1 - SSres/SStot
+#Loess.as
+SSres <- sum((Y4 - Loasc4$fitted)^2)
+SStot <- sum((Y4 - mean(Y4))^2)
+R2Loas4 <- 1 - SSres/SStot
+#locpoly
+SSres <- sum((Y4 - LoLyc4$y)^2)
+SStot <- sum((Y4 - mean(Y4))^2)
+R2Loly4 <- 1 - SSres/SStot
+
+#plot
+fitted_loc <- Lo4c$fitted
+fitted_lp <- Lpc4$mf[1]
+fitted_loas <- Loasc4$fitted
+fitted_Loly <- LoLyc4$y
+
+
+pc3 <- ggplot() + geom_point(mapping = aes(x = X4, y = fitted_loc, color = "loess")) + 
+  geom_point(mapping = aes(x = X4, y = unlist(fitted_lp), color = "locpol")) + 
+  geom_point(mapping = aes(x = X4, y = fitted_loas, color = "loess.as")) + 
+  geom_point(mapping = aes(x = X4, y = fitted_Loly, color = "locpoly")) + 
+  scale_color_manual(name = "Regression Function",
+                     values = c( "loess" = "blue", "locpol" = "red", "loess.as" = "green", "locpoly" = "purple"),
+                     labels = c("loess", "locpol", "loess.as","locpoly")) + 
+  labs(y = "fit") +
+  ggtitle("Claw distribution, 10^3 data points") # loess is under loess.as
+pc3
+```
+
+Again, the locpol function interpolates the data perfectly, and we can indeed see the claws appearing on the plot. The others are still underfitting by quite a lot this time, leading to $R^2$ coefficients around 0.65 for all the three others. Interesting to note is that the locpoly and the locpol function perform differently by a lot even though we input the same parameters.  
+Interesting is also that the two functions with an algorithmically-computed span from the loess.as function underfit quite badly. This hints that this specific method is not sensible enough to local variations, maybe because of the use of a too slow-decreasing kernel when taking the span parameter into account.  
+The great performance of the locpol function however ends there, as we are prevented from using it on bigger dataset by a 'maxevalpts' parameter, limiting the maximum size we can input. Let us look at the two last density plots together, as they contain similar results.
+```{r c45, echo = FALSE}
+#distribution
+Y5 <- dclaw(X5)
+n5 <- rnorm(X5, sd = 0.1)
+Y5 <- Y5 + n5
+
+# Application
+daf5 <- data.frame(X5,Y5)
+Lo5c <- loess(Y5 ~ X5, data = daf5, family = "gaussian", method = "loess", span = 0.05) # Lo3c$residuals
+#Lpc5 <- locpol(Y5 ~ X5, data = daf3, bw = 0.25, kernel = gaussK, deg = 2) # Lpc3$residuals
+Loasc5 <- loess.as(daf5$X5, daf5$Y5, degree = 2, criterion = "aicc", family = "gaussian") # Loasc3$residuals
+LoLyc5 <- locpoly(daf5$X5, daf5$Y5, degree = 2, kernel = "normal", bandwidth = 0.25, gridsize = 10001) # only gives results
+
+# R^2 Coefficients
+#Loess
+SSres <- sum((Y5 - Lo5c$fitted)^2)
+SStot <- sum((Y5 - mean(Y5))^2)
+R2Lo5 <- 1 - SSres/SStot
+#Loess.as
+SSres <- sum((Y5 - Loasc5$fitted)^2)
+SStot <- sum((Y5 - mean(Y5))^2)
+R2Loas5 <- 1 - SSres/SStot
+#locpoly
+SSres <- sum((Y5 - LoLyc5$y)^2)
+SStot <- sum((Y5 - mean(Y5))^2)
+R2Loly5 <- 1 - SSres/SStot
+
+#plot
+fitted_loc <- Lo5c$fitted
+fitted_loas <- Loasc5$fitted
+fitted_Loly <- LoLyc5$y
+
+
+pc4 <- ggplot() + geom_point(mapping = aes(x = X5, y = fitted_loc, color = "loess")) + 
+  geom_point(mapping = aes(x = X5, y = fitted_loas, color = "loess.as")) + 
+  geom_point(mapping = aes(x = X5, y = fitted_Loly, color = "locpoly")) + 
+  scale_color_manual(name = "Regression Function",
+                     values = c( "loess" = "blue",  "loess.as" = "green", "locpoly" = "purple"),
+                     labels = c("loess", "loess.as","locpoly")) + 
+  labs(y = "fit") +
+  ggtitle("Claw distribution, 10^4 data points") # loess is under loess.as
+
+# X6
+# Distribution
+Y6 <- dclaw(X6)
+n6 <- rnorm(X6, sd = 0.1)
+Y6 <- Y6 + n6
+
+# Application
+daf6 <- data.frame(X6,Y6)
+Lo6c <- loess(Y6 ~ X6, data = daf6, family = "gaussian", method = "loess", span = 0.05) # Lo3c$residuals with span obtained from loess.as
+
+Loasc6 <- loess.as(daf6$X6, daf6$Y6, degree = 2, criterion = "aicc", family = "gaussian") # Loasc3$residuals
+LoLyc6 <- locpoly(daf6$X6, daf6$Y6, degree = 2, kernel = "normal", bandwidth = 0.25, gridsize = 100001) # only gives results
+
+# R^2 Coefficients
+# Loess
+SSres <- sum((Y6 - Lo6c$fitted)^2)
+SStot <- sum((Y6 - mean(Y5))^2)
+R2Lo6 <- 1 - SSres/SStot
+#loess.as
+SSres <- sum((Y6 - Loasc6$fitted)^2)
+SStot <- sum((Y6 - mean(Y6))^2)
+R2Loas6 <- 1 - SSres/SStot
+#locpoly
+SSres <- sum((Y6 - LoLyc6$y)^2)
+SStot <- sum((Y6 - mean(Y6))^2)
+R2Loly6 <- 1 - SSres/SStot
+
+#plot
+fitted_loc2 <- Lo6c$fitted
+#fitted_lp <- Lpc5$mf[1]
+fitted_loas2 <- Loasc6$fitted
+fitted_Loly2 <- LoLyc6$y
+
+
+pc5 <- ggplot() + geom_point(mapping = aes(x = X6, y = fitted_loc2, color = "loess")) + 
+  geom_point(mapping = aes(x = X6, y = fitted_loas2, color = "loess.as")) + 
+  geom_point(mapping = aes(x = X6, y = fitted_Loly2, color = "locpoly")) + 
+  scale_color_manual(name = "Regression Function",
+                     values = c( "loess" = "blue",  "loess.as" = "green", "locpoly" = "purple"),
+                     labels = c("loess", "loess.as","locpoly")) + 
+  labs(y = "fit") +
+  ggtitle("Claw distribution, 10^5 data points") # loess is under loess.as
+# at this point basically, loess does the same as loess.as, loess.as is great, locpoly underfits a lot (too big bw most likely)
+pc4 + pc5
+```
+
+On the above two plots, we see loess and loess.as have shaped the target claw function quite nicely, which is appropriate, as we noised the data using a mean zero gaussian function. Towards comprehension, let us have a look at the given dataset for the last computations (size $10^5$):
+
+```{r claw, echo = FALSE}
+plot(X6,Y6,main = "noised claw distribution on 10^5 points")
+```
+
+Now, let us look at the $R^2$ coefficients across the dataset sizes under the form of a table and a plot:
+
+```{r r2c, echo = FALSE}
+tab <- matrix(c(R2Lo3, R2Lp3, R2Loas3, R2Loly3, R2Lo4, R2Lp4, R2Loas4, R2Loly4,R2Lo5, "-", R2Loas5, R2Loly5, R2Lo6, "-", R2Loas6, R2Loly6), ncol=4, byrow=TRUE)
+colnames(tab) <- c('Loess','locpol','loess.as',"locpoly")
+rownames(tab) <- c('10^2','10^3','10^4',"10^5")
+tab <- as.table(tab)
+
+# plotting r^2 coefficients
+locr2 <- c(R2Lo3,R2Lo4,R2Lo5,R2Lo6)
+lpr2 <- c(R2Lp3,R2Lp4,0,0)
+loasr2 <- c(R2Loas3,R2Loas4,R2Loas5,R2Loas6)
+locyr2 <- c(R2Loly3,R2Loly4,R2Loly5,R2Loly6)
+X <- c(10^2,10^3,10^4,10^5)
+
+pr2c <- ggplot() + geom_point(mapping = aes(x = log10(X), y = locr2, color = "loess")) + 
+  geom_point(mapping = aes(x = log10(X), y = lpr2, color = "locpol")) + 
+  geom_point(mapping = aes(x = log10(X), y = loasr2, color = "loess.as")) + 
+  geom_point(mapping = aes(x = log10(X), y = locyr2, color = "locpoly")) + 
+  scale_color_manual(name = "Regression Function",
+                     values = c( "loess" = "blue", "locpol" = "red", "loess.as" = "green", "locpoly" = "purple"),
+                     labels = c("loess", "locpol", "loess.as","locpoly")) + 
+  labs(y = "R2") +
+  ggtitle("R2 coefficients applied to claw distribution, for different functions, and data size")
+tab
+pr2c
+
+```
+
+First looking at the table, we see loess and loess.as function similarly given the same parameters, meaning we can exchange one for the other, resultswise, depending on whether we know the span we want to use or not. Indeed, computing this parameter takes of course time. Indeed, Cross-validation has an $O(n^2)$ complexity, reduced to $O(Kn)$ when considering K-folds cross validation, where n is the sample size. For the two bandwidth functions, locpol seems whenever applicable, a better choice compared to the locpoly, as it yields better results altogether.
+
+Looking at the plot now, we see the loess and loess.as actually increase their coefficients of determination as the sample size grows. Indeed, it seems it requires a lot of data to 'convince' the loess.as algorithm to reduce its span parameter enough not to underfit anymore. They obtain here better results than the locpoly function, but this entirely depends on the bandwidth parameter, that we would normally tune finely by applying an algorithm to choose it. As an example, we see the tendency to underfit disappears as expected when reducing the bandwidth, here by dividing it by 10:
+
+```{r locpoly, echo = FALSE}
+LoLyc5 <- locpoly(daf5$X5, daf5$Y5, degree = 2, kernel = "normal", bandwidth = 0.025, gridsize = 10001) # only gives results
+fitted_loc <- Lo5c$fitted
+fitted_loas <- Loasc5$fitted
+fitted_Loly <- LoLyc5$y
+pc4
+```
+
+Now moving to a different family of dataset, we generate this time a gaussian random variable to which we add small sinusoidal components, aiming to generate softer waves than the claw function. We expect here the functions to perform better, as the local variations should be smoother. We also noise them identically to the claw dataset. This time, we use a smaller bandwidth for bigger datasets for the locpoly function, as the previous one was definitely too big for the bigger datasets, as a higher x-axis density leads to more local samples and thus this reduction is relevant. 
+
+With this in mind, we now once again look at the different results, starting with order 100, moving to 10^5.
+
+```{r s2, echo = FALSE}
+#101:
+
+Y3 <- dnorm(X3) # normal distribution
+s3 <- 1/10*sin(4*X3) # sinusoidal noise
+n3 <- rnorm(X3, sd = 0.05) # gaussian noise
+Y3 <- Y3 + s3 + n3
+
+# applying the functions:
+daf3 <- data.frame(X3,Y3)
+Lo3c <- loess(Y3 ~ X3, data = daf3, family = "gaussian", method = "loess", span = 0.587) # Lo3c$residuals
+Lpc3 <- locpol(Y3 ~ X3, data = daf3, bw = 0.25, kernel = gaussK, deg = 2) # Lpc3$residuals
+Loasc3 <- loess.as(daf3$X3, daf3$Y3, degree = 2, criterion = "aicc", family = "gaussian") # Loasc3$residuals
+LoLyc3 <- locpoly(daf3$X3, daf3$Y3, degree = 2, kernel = "normal", bandwidth = 0.25, gridsize = 101) # only gives results
+
+
+# R^2 coefficients
+#Loess
+SSres <- sum((Y3 - Lo3c$fitted)^2)
+SStot <- sum((Y3 - mean(Y3))^2)
+R2Lo3 <- 1 - SSres/SStot
+#Locpol
+SSres <- sum((Y3 - Lpc3$mf[1])^2)
+SStot <- sum((Y3 - mean(Y3))^2)
+R2Lp3 <- 1 - SSres/SStot
+#Loess.as
+SSres <- sum((Y3 - Loasc3$fitted)^2)
+SStot <- sum((Y3 - mean(Y3))^2)
+R2Loas3 <- 1 - SSres/SStot
+#locpoly
+SSres <- sum((Y3 - LoLyc3$y)^2)
+SStot <- sum((Y3 - mean(Y3))^2)
+R2Loly3 <- 1 - SSres/SStot
+
+#plot
+fitted_loc <- Lo3c$fitted
+fitted_lp <- Lpc3$mf[1]
+fitted_loas <- Loasc3$fitted
+fitted_Loly <- LoLyc3$y
+
+
+pc2 <- ggplot() + geom_point(mapping = aes(x = X3, y = fitted_loc, color = "loess")) + 
+  geom_point(mapping = aes(x = X3, y = unlist(fitted_lp), color = "locpol")) + 
+  geom_point(mapping = aes(x = X3, y = fitted_loas, color = "loess.as")) + 
+  geom_point(mapping = aes(x = X3, y = fitted_Loly, color = "locpoly")) + 
+  scale_color_manual(name = "Regression Function",
+                     values = c( "loess" = "blue", "locpol" = "red", "loess.as" = "green", "locpoly" = "purple"),
+                     labels = c("loess", "locpol", "loess.as","locpoly")) + 
+  labs(y = "fit") +
+  ggtitle("Claw distribution, 10^2 data points")
+pc2
+```
+```{r ps3, echo = FALSE}
+## 1001
+#Distribution
+Y4 <- dnorm(X4) # normal distribution
+s4 <- 1/10*sin(4*X4) # sinusoidal noise
+n4 <- rnorm(X4, sd = 0.05) # gaussian noise
+Y4 <- Y4 + s4 + n4
+
+# Application
+daf4 <- data.frame(X4,Y4)
+Lo4c <- loess(Y4 ~ X4, data = daf4, family = "gaussian", method = "loess", span = 0.211) # Lo3c$residuals
+Lpc4 <- locpol(Y4 ~ X4, data = daf4, bw = 0.25, kernel = gaussK, deg = 2) # Lpc3$residuals
+Loasc4 <- loess.as(daf4$X4, daf4$Y4, degree = 2, criterion = "aicc", family = "gaussian") # Loasc3$residuals
+LoLyc4 <- locpoly(daf4$X4, daf4$Y4, degree = 2, kernel = "normal", bandwidth = 0.25, gridsize = 1001) # only gives results
+
+
+# R^2 coefficients
+#Loess
+SSres <- sum((Y4 - Lo4c$fitted)^2)
+SStot <- sum((Y4 - mean(Y4))^2)
+R2Lo4 <- 1 - SSres/SStot
+#Locpol
+SSres <- sum((Y4 - Lpc4$mf[1])^2)
+SStot <- sum((Y4 - mean(Y4))^2)
+R2Lp4 <- 1 - SSres/SStot
+#Loess.as
+SSres <- sum((Y4 - Loasc4$fitted)^2)
+SStot <- sum((Y4 - mean(Y4))^2)
+R2Loas4 <- 1 - SSres/SStot
+#locpoly
+SSres <- sum((Y4 - LoLyc4$y)^2)
+SStot <- sum((Y4 - mean(Y4))^2)
+R2Loly4 <- 1 - SSres/SStot
+
+#plot
+fitted_loc <- Lo4c$fitted
+fitted_lp <- Lpc4$mf[1]
+fitted_loas <- Loasc4$fitted
+fitted_Loly <- LoLyc4$y
+
+
+pc3 <- ggplot() + geom_point(mapping = aes(x = X4, y = fitted_loc, color = "loess")) + 
+  geom_point(mapping = aes(x = X4, y = unlist(fitted_lp), color = "locpol")) + 
+  geom_point(mapping = aes(x = X4, y = fitted_loas, color = "loess.as")) + 
+  geom_point(mapping = aes(x = X4, y = fitted_Loly, color = "locpoly")) + 
+  scale_color_manual(name = "Regression Function",
+                     values = c( "loess" = "blue", "locpol" = "red", "loess.as" = "green", "locpoly" = "purple"),
+                     labels = c("loess", "locpol", "loess.as","locpoly")) + 
+  labs(y = "fit") +
+  ggtitle("Claw distribution, 10^3 data points") # loess is under loess.as
+pc3
+```
+```{r ps4, echo = FALSE}
+# 10001 
+
+#distribution
+Y5 <- dnorm(X5) # normal distribution
+s5 <- 1/10*sin(4*X5) # sinusoidal noise
+n5 <- rnorm(X5, sd = 0.05) # gaussian noise
+Y5 <- Y5 + s5 + n5
+
+# Application
+daf5 <- data.frame(X5,Y5)
+Lo5c <- loess(Y5 ~ X5, data = daf5, family = "gaussian", method = "loess", span = 0.05) # Lo3c$residuals
+#Lpc5 <- locpol(Y5 ~ X5, data = daf3, bw = 0.25, kernel = gaussK, deg = 2) # Lpc3$residuals
+Loasc5 <- loess.as(daf5$X5, daf5$Y5, degree = 2, criterion = "aicc", family = "gaussian") # Loasc3$residuals
+LoLyc5 <- locpoly(daf5$X5, daf5$Y5, degree = 2, kernel = "normal", bandwidth = 0.025, gridsize = 10001) # only gives results
+
+# R^2 Coefficients
+#Loess
+SSres <- sum((Y5 - Lo5c$fitted)^2)
+SStot <- sum((Y5 - mean(Y5))^2)
+R2Lo5 <- 1 - SSres/SStot
+#Loess.as
+SSres <- sum((Y5 - Loasc5$fitted)^2)
+SStot <- sum((Y5 - mean(Y5))^2)
+R2Loas5 <- 1 - SSres/SStot
+#locpoly
+SSres <- sum((Y5 - LoLyc5$y)^2)
+SStot <- sum((Y5 - mean(Y5))^2)
+R2Loly5 <- 1 - SSres/SStot
+
+#plot
+fitted_loc <- Lo5c$fitted
+fitted_loas <- Loasc5$fitted
+fitted_Loly <- LoLyc5$y
+
+
+pc4 <- ggplot() + geom_point(mapping = aes(x = X5, y = fitted_loc, color = "loess")) + 
+  geom_point(mapping = aes(x = X5, y = fitted_loas, color = "loess.as")) + 
+  geom_point(mapping = aes(x = X5, y = fitted_Loly, color = "locpoly")) + 
+  scale_color_manual(name = "Regression Function",
+                     values = c( "loess" = "blue",  "loess.as" = "green", "locpoly" = "purple"),
+                     labels = c("loess", "loess.as","locpoly")) + 
+  labs(y = "fit") +
+  ggtitle("Claw distribution, 10^4 data points") # loess is under loess.as
+pc4
+```
+
+```{r ps5, echo = FALSE}
+# X6
+# Distribution
+Y6 <- dnorm(X6) # normal distribution
+s6 <- 1/10*sin(4*X6) # sinusoidal noise
+n6 <- rnorm(X6, sd = 0.05) # gaussian noise
+Y6 <- Y6 + s6 + n6
+
+# Application
+daf6 <- data.frame(X6,Y6)
+Lo6c <- loess(Y6 ~ X6, data = daf6, family = "gaussian", method = "loess", span = 0.05) # Lo3c$residuals with span obtained from loess.as
+
+Loasc6 <- loess.as(daf6$X6, daf6$Y6, degree = 2, criterion = "aicc", family = "gaussian") # Loasc3$residuals
+LoLyc6 <- locpoly(daf6$X6, daf6$Y6, degree = 2, kernel = "normal", bandwidth = 0.025, gridsize = 100001) # only gives results
+
+# R^2 Coefficients
+# Loess
+SSres <- sum((Y6 - Lo6c$fitted)^2)
+SStot <- sum((Y6 - mean(Y5))^2)
+R2Lo6 <- 1 - SSres/SStot
+#loess.as
+SSres <- sum((Y6 - Loasc6$fitted)^2)
+SStot <- sum((Y6 - mean(Y6))^2)
+R2Loas6 <- 1 - SSres/SStot
+#locpoly
+SSres <- sum((Y6 - LoLyc6$y)^2)
+SStot <- sum((Y6 - mean(Y6))^2)
+R2Loly6 <- 1 - SSres/SStot
+
+#plot
+fitted_loc <- Lo6c$fitted
+#fitted_lp <- Lpc5$mf[1]
+fitted_loas <- Loasc6$fitted
+fitted_Loly <- LoLyc6$y
+
+
+pc5 <- ggplot() + geom_point(mapping = aes(x = X6, y = fitted_loc, color = "loess")) + 
+  geom_point(mapping = aes(x = X6, y = fitted_loas, color = "loess.as")) + 
+  geom_point(mapping = aes(x = X6, y = fitted_Loly, color = "locpoly")) + 
+  scale_color_manual(name = "Regression Function",
+                     values = c( "loess" = "blue",  "loess.as" = "green", "locpoly" = "purple"),
+                     labels = c("loess", "loess.as","locpoly")) + 
+  labs(y = "fit") +
+  ggtitle("Claw distribution, 10^5 data points") # loess is under loess.as
+# at this point basically, loess does the same as loess.as, loess.as is great, locpoly underfits a lot (too big bw most likely)
+
+# fitting into a table 
+
+tab <- matrix(c(R2Lo3, R2Lp3, R2Loas3, R2Loly3, R2Lo4, R2Lp4, R2Loas4, R2Loly4,R2Lo5, "-", R2Loas5, R2Loly5, R2Lo6, "-", R2Loas6, R2Loly6), ncol=4, byrow=TRUE)
+colnames(tab) <- c('Loess','locpol','loess.as',"locpoly")
+rownames(tab) <- c('10^2','10^3','10^4',"10^5")
+tab <- as.table(tab)
+
+# plotting r^2 coefficients
+locr2 <- c(R2Lo3,R2Lo4,R2Lo5,R2Lo6)
+lpr2 <- c(R2Lp3,R2Lp4,0,0)
+loasr2 <- c(R2Loas3,R2Loas4,R2Loas5,R2Loas6)
+locyr2 <- c(R2Loly3,R2Loly4,R2Loly5,R2Loly6)
+X <- c(10^2,10^3,10^4,10^5)
+
+pr2c <- ggplot() + geom_point(mapping = aes(x = log10(X), y = locr2, color = "loess")) + 
+  geom_point(mapping = aes(x = log10(X), y = lpr2, color = "locpol")) + 
+  geom_point(mapping = aes(x = log10(X), y = loasr2, color = "loess.as")) + 
+  geom_point(mapping = aes(x = log10(X), y = locyr2, color = "locpoly")) + 
+  scale_color_manual(name = "Regression Function",
+                     values = c( "loess" = "blue", "locpol" = "red", "loess.as" = "green", "locpoly" = "purple"),
+                     labels = c("loess", "locpol", "loess.as","locpoly")) + 
+  labs(y = "R2") +
+  ggtitle("R2 coefficients applied to claw distribution, for different functions, and data size")
+pc5
+```
+
+```{r final results, echo = FALSE}
+tab
+pr2c
+```
 
 # General Results and Discussion
 
