@@ -4,6 +4,8 @@ install.packages("locpol")
 install.packages("fANCOVA")
 install.packages("KernSmooth")
 install.packages("wavethresh")
+install.packages("patchwork")
+install.packages("tidyverse")
 library(wavethresh)
 library(locpol)
 library(fANCOVA)
@@ -156,7 +158,7 @@ daf4 <- data.frame(X4,Y4)
 Lo4c <- loess(Y4 ~ X4, data = daf4, family = "gaussian", method = "loess", span = 0.211) # Lo3c$residuals
 Lpc4 <- locpol(Y4 ~ X4, data = daf4, bw = 0.25, kernel = gaussK, deg = 2) # Lpc3$residuals
 Loasc4 <- loess.as(daf4$X4, daf4$Y4, degree = 2, criterion = "aicc", family = "gaussian") # Loasc3$residuals
-LoLyc4 <- locpoly(daf4$X4, daf4$Y4, degree = 2, kernel = "normal", bandwidth = 0.0025, gridsize = 1001) # only gives results
+LoLyc4 <- locpoly(daf4$X4, daf4$Y4, degree = 2, kernel = "normal", bandwidth = 0.25, gridsize = 1001) # only gives results
 
 
 # R^2 coefficients
@@ -356,7 +358,7 @@ pc2 <- ggplot() + geom_point(mapping = aes(x = X3, y = fitted_loc, color = "loes
                      values = c( "loess" = "blue", "locpol" = "red", "loess.as" = "green", "locpoly" = "purple"),
                      labels = c("loess", "locpol", "loess.as","locpoly")) + 
   labs(y = "fit") +
-  ggtitle("Claw distribution, 10^2 data points")
+  ggtitle("Gaussian with sinusoidal noise function, 10^2 data points")
 
 
 
@@ -408,7 +410,7 @@ pc3 <- ggplot() + geom_point(mapping = aes(x = X4, y = fitted_loc, color = "loes
                      values = c( "loess" = "blue", "locpol" = "red", "loess.as" = "green", "locpoly" = "purple"),
                      labels = c("loess", "locpol", "loess.as","locpoly")) + 
   labs(y = "fit") +
-  ggtitle("Claw distribution, 10^3 data points") # loess is under loess.as
+  ggtitle("Gaussian with sinusoidal noise function, 10^3 data points") # loess is under loess.as
 
 # 10001 
 
@@ -452,7 +454,7 @@ pc4 <- ggplot() + geom_point(mapping = aes(x = X5, y = fitted_loc, color = "loes
                      values = c( "loess" = "blue",  "loess.as" = "green", "locpoly" = "purple"),
                      labels = c("loess", "loess.as","locpoly")) + 
   labs(y = "fit") +
-  ggtitle("Claw distribution, 10^4 data points") # loess is under loess.as
+  ggtitle("Gaussian with sinusoidal noise function, 10^4 data points") # loess is under loess.as
 
 # X6
 # Distribution
@@ -496,7 +498,7 @@ pc5 <- ggplot() + geom_point(mapping = aes(x = X6, y = fitted_loc, color = "loes
                      values = c( "loess" = "blue",  "loess.as" = "green", "locpoly" = "purple"),
                      labels = c("loess", "loess.as","locpoly")) + 
   labs(y = "fit") +
-  ggtitle("Claw distribution, 10^5 data points") # loess is under loess.as
+  ggtitle("Gaussian with sinusoidal noise function, 10^5 data points") # loess is under loess.as
 # at this point basically, loess does the same as loess.as, loess.as is great, locpoly underfits a lot (too big bw most likely)
 
 # fitting into a table 

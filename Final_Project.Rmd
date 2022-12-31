@@ -3,7 +3,7 @@ title: 'Statistical Computation and Visualization: Final Project'
 author: "Issam Arabi, Eric Maeder"
 date: "2022-12-20"
 output: html_document
-bibliography: Z:/Stat_Comp_Project/references.bib
+bibliography: /home/emaeder/Desktop/MyFiles/Stat_Comp_Project/references.bib
 link-citations: true
 ---
 
@@ -149,7 +149,7 @@ print(freq_data)
 
 ```
 
-From this data, we can see that loess.as takes much more time than the rest of the functions, followed by locpol, then loess. The most computationally efficient function was locpoly.
+From this data, we can see that loess.as takes much more time than the rest of the functions, followed by locpol, then loess. The most computationally efficient function was locpoly. This is due to the loess.as function calculating its optimal bandwidth internally, requiring the application of a selection algorithm, such as cross validation, or more generally a K-folds approach, for example. This does require extra time, but has the advantage of combining choosing an efficient span parameter and applying it at once. A more valid comparison would be to time a K-folds approach on the datasets to choose either a bandwidth or a span parameter, and add its execution time to the other functions.
 
 # Comparison of approximation residuals
 
@@ -159,6 +159,7 @@ Since locpol function is un-applicable to datasets too large, we set the resulti
 We output the different fit functions, tables of the $R^2$ coefficients, and lastly a plot of the coefficients of determination on each dataset size.
 
 Let us start with the smaller datasets:
+
 ``` {r c2, echo = FALSE}
 X3 <- seq(from = -5, to = 5, by= 0.1)
 X4 <- seq(from = -5, to = 5, by= 0.01)
@@ -219,6 +220,7 @@ pc2
 For now, we cannot really see the claws emerging from the distribution, but that is only due to the inaccuracy induced by the small sample size, as the locpol function produces an R^2 of 1, meaning it approximates the function perfectly. The others underfit a bit, leading to smaller values and worse approximation. However, that might not be a bad result, as we are a priori with so little data not sure we should fit the data so precisely in fear of overfitting. 
 
 Let us look at what changes when we consider a superior order of magnitude:
+
 ```{r c3, echo = FALSE}
 ## 1001
 #Distribution
@@ -274,6 +276,7 @@ pc3
 Again, the locpol function interpolates the data perfectly, and we can indeed see the claws appearing on the plot. The others are still underfitting by quite a lot this time, leading to $R^2$ coefficients around 0.65 for all the three others. Interesting to note is that the locpoly and the locpol function perform differently by a lot even though we input the same parameters.  
 Interesting is also that the two functions with an algorithmically-computed span from the loess.as function underfit quite badly. This hints that this specific method is not sensible enough to local variations, maybe because of the use of a too slow-decreasing kernel when taking the span parameter into account.  
 The great performance of the locpol function however ends there, as we are prevented from using it on bigger dataset by a 'maxevalpts' parameter, limiting the maximum size we can input. Let us look at the two last density plots together, as they contain similar results.
+
 ```{r c45, echo = FALSE}
 #distribution
 Y5 <- dclaw(X5)
@@ -359,7 +362,8 @@ pc5 <- ggplot() + geom_point(mapping = aes(x = X6, y = fitted_loc2, color = "loe
   labs(y = "fit") +
   ggtitle("Claw distribution, 10^5 data points") # loess is under loess.as
 # at this point basically, loess does the same as loess.as, loess.as is great, locpoly underfits a lot (too big bw most likely)
-pc4 + pc5
+pc4 
+pc5
 ```
 
 On the above two plots, we see loess and loess.as have shaped the target claw function quite nicely, which is appropriate, as we noised the data using a mean zero gaussian function. Towards comprehension, let us have a look at the given dataset for the last computations (size $10^5$):
@@ -397,7 +401,7 @@ pr2c
 
 ```
 
-First looking at the table, we see loess and loess.as function similarly given the same parameters, meaning we can exchange one for the other, resultswise, depending on whether we know the span we want to use or not. Indeed, computing this parameter takes of course time. Indeed, Cross-validation has an $O(n^2)$ complexity, reduced to $O(Kn)$ when considering K-folds cross validation, where n is the sample size. For the two bandwidth functions, locpol seems whenever applicable, a better choice compared to the locpoly, as it yields better results altogether.
+First looking at the table, we see loess and loess.as function similarly given the same parameters, meaning we can exchange one for the other, resultswise, depending on whether we know the span we want to use or not. Indeed, computing this parameter takes of course time. Indeed, Cross-validation has an $O(n^2)$ complexity, reduced to $O(Kn)$ when considering K-folds cross validation, where n is the sample size. For the two bandwidth functions, locpol seems whenever applicable, a better choice compared to the locpoly, as it yields better results altogether. Caution is however needed when interpreting these results, as although a coefficient of determination equal to unity means the data is perfectly interpolated, this does not mean the algorithm performs well when dealing with noised data, as it means the locpol function is overfitting the data points. In this case however, this is preferable, as it is the only function that shaped the existing claws when applied on datasets of small size.
 
 Looking at the plot now, we see the loess and loess.as actually increase their coefficients of determination as the sample size grows. Indeed, it seems it requires a lot of data to 'convince' the loess.as algorithm to reduce its span parameter enough not to underfit anymore. They obtain here better results than the locpoly function, but this entirely depends on the bandwidth parameter, that we would normally tune finely by applying an algorithm to choose it. As an example, we see the tendency to underfit disappears as expected when reducing the bandwidth, here by dividing it by 10:
 
@@ -411,8 +415,17 @@ pc4
 
 Now moving to a different family of dataset, we generate this time a gaussian random variable to which we add small sinusoidal components, aiming to generate softer waves than the claw function. We expect here the functions to perform better, as the local variations should be smoother. We also noise them identically to the claw dataset. This time, we use a smaller bandwidth for bigger datasets for the locpoly function, as the previous one was definitely too big for the bigger datasets, as a higher x-axis density leads to more local samples and thus this reduction is relevant. 
 
-With this in mind, we now once again look at the different results, starting with order 100, moving to 10^5.
+With this in mind, we now once again look at the different results, starting with order 100, moving to 10^5.  
+First, we look at original curve we are trying to interpolate on $10^4$ points, without the noise: 
 
+```{r target, echo = FALSE}
+Y5 <- dnorm(X5) # normal distribution
+s5 <- 1/10*sin(4*X5) # sinusoidal component
+Y5 <- Y5 + s5
+plot(X5,Y5, main = "Gaussian distribution with sinusoidal component")
+```
+
+As we can see, the target is still wiggly, but the second derivative varies slower than in the previous example. Let us see how the different functions perform;
 ```{r s2, echo = FALSE}
 #101:
 
@@ -462,14 +475,17 @@ pc2 <- ggplot() + geom_point(mapping = aes(x = X3, y = fitted_loc, color = "loes
                      values = c( "loess" = "blue", "locpol" = "red", "loess.as" = "green", "locpoly" = "purple"),
                      labels = c("loess", "locpol", "loess.as","locpoly")) + 
   labs(y = "fit") +
-  ggtitle("Claw distribution, 10^2 data points")
+  ggtitle("Gaussian with sinusoidal noise function, 10^2 data points")
 pc2
 ```
+
+On the first graph, we can see the span approaches underfit the curve quite strongly, the locpoly function gives a good idea of the underlying curve, and the locpol function , if maybe too wiggly, also gives good results back. This is similar to what happened in the claw distribution case.  
+Let us observe the evolution of the regressions, as the number of data points increases:
 ```{r ps3, echo = FALSE}
 ## 1001
 #Distribution
 Y4 <- dnorm(X4) # normal distribution
-s4 <- 1/10*sin(4*X4) # sinusoidal noise
+s4 <- 1/10*sin(4*X4) # sinusoidal component
 n4 <- rnorm(X4, sd = 0.05) # gaussian noise
 Y4 <- Y4 + s4 + n4
 
@@ -514,15 +530,18 @@ pc3 <- ggplot() + geom_point(mapping = aes(x = X4, y = fitted_loc, color = "loes
                      values = c( "loess" = "blue", "locpol" = "red", "loess.as" = "green", "locpoly" = "purple"),
                      labels = c("loess", "locpol", "loess.as","locpoly")) + 
   labs(y = "fit") +
-  ggtitle("Claw distribution, 10^3 data points") # loess is under loess.as
+  ggtitle("Gaussian with sinusoidal noise function, 10^3 data points") # loess is under loess.as
 pc3
 ```
+
+Here, we are still fitting the locpol and the locpoly functions with the same input parameters, but we see once again a difference. Indeed, it seems the locpol function has a tendency to overfit quite badly in this case, which gives us a noisy and rough resulting underlying curve, whereas the locpoly function and the two span approaches give a better result. Noticeable is the small underfit of the loess function, possibly due to the approximation of the span parameter we gave it, instead of the exact number (order of $10^{-3}$). 
+
 ```{r ps4, echo = FALSE}
 # 10001 
 
 #distribution
 Y5 <- dnorm(X5) # normal distribution
-s5 <- 1/10*sin(4*X5) # sinusoidal noise
+s5 <- 1/10*sin(4*X5) # sinusoidal component
 n5 <- rnorm(X5, sd = 0.05) # gaussian noise
 Y5 <- Y5 + s5 + n5
 
@@ -560,15 +579,15 @@ pc4 <- ggplot() + geom_point(mapping = aes(x = X5, y = fitted_loc, color = "loes
                      values = c( "loess" = "blue",  "loess.as" = "green", "locpoly" = "purple"),
                      labels = c("loess", "loess.as","locpoly")) + 
   labs(y = "fit") +
-  ggtitle("Claw distribution, 10^4 data points") # loess is under loess.as
-pc4
+  ggtitle("Gaussian with sinusoidal noise function, 10^4 data points") # loess is under loess.as
+
 ```
 
 ```{r ps5, echo = FALSE}
 # X6
 # Distribution
 Y6 <- dnorm(X6) # normal distribution
-s6 <- 1/10*sin(4*X6) # sinusoidal noise
+s6 <- 1/10*sin(4*X6) # sinusoidal component
 n6 <- rnorm(X6, sd = 0.05) # gaussian noise
 Y6 <- Y6 + s6 + n6
 
@@ -594,20 +613,20 @@ SStot <- sum((Y6 - mean(Y6))^2)
 R2Loly6 <- 1 - SSres/SStot
 
 #plot
-fitted_loc <- Lo6c$fitted
+fitted_loc2 <- Lo6c$fitted
 #fitted_lp <- Lpc5$mf[1]
-fitted_loas <- Loasc6$fitted
-fitted_Loly <- LoLyc6$y
+fitted_loas2 <- Loasc6$fitted
+fitted_Loly2 <- LoLyc6$y
 
 
-pc5 <- ggplot() + geom_point(mapping = aes(x = X6, y = fitted_loc, color = "loess")) + 
-  geom_point(mapping = aes(x = X6, y = fitted_loas, color = "loess.as")) + 
-  geom_point(mapping = aes(x = X6, y = fitted_Loly, color = "locpoly")) + 
+pc5 <- ggplot() + geom_point(mapping = aes(x = X6, y = fitted_loc2, color = "loess")) + 
+  geom_point(mapping = aes(x = X6, y = fitted_loas2, color = "loess.as")) + 
+  geom_point(mapping = aes(x = X6, y = fitted_Loly2, color = "locpoly")) + 
   scale_color_manual(name = "Regression Function",
                      values = c( "loess" = "blue",  "loess.as" = "green", "locpoly" = "purple"),
                      labels = c("loess", "loess.as","locpoly")) + 
   labs(y = "fit") +
-  ggtitle("Claw distribution, 10^5 data points") # loess is under loess.as
+  ggtitle("CGaussian with sinusoidal noise function, 10^5 data points") # loess is under loess.as
 # at this point basically, loess does the same as loess.as, loess.as is great, locpoly underfits a lot (too big bw most likely)
 
 # fitting into a table 
@@ -632,22 +651,27 @@ pr2c <- ggplot() + geom_point(mapping = aes(x = log10(X), y = locr2, color = "lo
                      values = c( "loess" = "blue", "locpol" = "red", "loess.as" = "green", "locpoly" = "purple"),
                      labels = c("loess", "locpol", "loess.as","locpoly")) + 
   labs(y = "R2") +
-  ggtitle("R2 coefficients applied to claw distribution, for different functions, and data size")
-pc5
+  ggtitle("R2 coefficients applied to gaussian distribution with sinusoidal and gaussian noise, for different functions, and data size")
+ pc4
+ pc5
 ```
 
+With so many data points and uniform noise, we have now good results for each of the three functions. We can see the regressions become more smooth as the number of data points goes up, most likely due to the lesser impact of the noise given, a direct consequence from the Law of Large Numbers. Now, let us have a final look at the evolution of the $R^2$ coefficients, although it is a worse indicator than checking the underlying fits.
 ```{r final results, echo = FALSE}
 tab
 pr2c
 ```
 
+As we can see, when we increase the number of datapoints, the span and the bandwidth methods give similar results. For smaller samples however, the bandwidth approach is preferable. Again, we can see a clear overfitting tendency from the locpol function, as both of the considered coefficients of determination are equal to one, meaning the algorithm interpolated each point perfectly, which might be detrimental when working with noised data.
+
+In summary, we observed two different approaches to local regression: one using a span parameter and one using a bandwidth, each with two different functions. It seems the bandwidth approach tends to underfit the data, especially when looking at small datasets, but works fine when dealing with larger samples. The bandwidth approach does not necessarily have this problem, but the two considered functions behave quite differently even in cases where they are givem identical parameters; the locpoly function is way more sensible to small fluctuations of the data, which is good to detect patterns with relatively small samples (order of 100,1000), but overfits quite badly when given noised data. The locpoly function on the contrary, tends to underfit on smaller samples (given the same bandwidth as the locpol function) but works well for bigger datasets. This is altogether an useful result, as we cannot apply the locpoly function on samples that are too big anyway.
+
+A remaining concern is the difference in the results of the two functions taking a bandwidth as input parameter. Indeed, there is no explanation in the function descriptions that explain why they give back so different results, as both seem to 'fit a local polynomial given a kernel and a bandwidth'. A possibility would be the regression criteria, that could either be least squares, Aic, ...
+
 # General Results and Discussion
 
 # Conclusion
 
-# comments (to do)
-Add references to packages / fcts documentation in according section.
 
-Comment on the outputs of each fct and what is calculated in the same section, as that might influence runtime.
 
 # References (add references to fcts and packages)
