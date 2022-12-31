@@ -670,22 +670,25 @@ A remaining concern is the difference in the results of the two functions taking
 
 # General Results and Discussion
 
-Key aspects I see: 
-Span approach (loess, loess.as) underfits for small data, even with algorithmically-chosen hyperparameter, works well for bigger datasets.   
-Both functions give the same result when given same span parameter, so loess is better when we have a prior idea, and loess.as better when we don't, basically.  
-Bandwidth approach (locpol, locpoly) have different results, we didn't choose the parameter optimally but they give good results when given a reasonable bandwidth.  
-locpol is sensitive to small variations but then has a tendency to overfit + it's not applicable on bigger datasets.  
-locpoly underfits a bit with same parameters than locpol, but then works well for bigger size.  
-Locpol is as such better when we think the data is not too noised, and locpoly better otherwise.  
-When comparing span vs bandwidth approach, the span is a bit worse for small datasets (tends to underfit) but for bigger datasets it gives the same results.  
-I haven't checked the time aspect too much, so you know better than me here. Seems like locpoly is really efficient though, and of course loess.as has this span selection taking so much time.  
-Altogether, locpoly looks like a solid choice to me, both in performance and in timing, though we need to select different bandwidths to try it out.  Then, loess and loess.as are basically the same, so it comes down to if you want to calculate the span parameter internally or choose it differently. Locpol is somewhere at the same level, it's a bit slower than locpoly, it's unapplicable for big datasets, and as mentioned above, it's way more sensitive than locpoly.
-# Conclusion
-What could be tried next :  
-Run a K-folds algorithm for choosing bandwidth/span, then compare runtime with loess.as that does it anyway.  
-Evaluate performance on datasets with different X-axis density: here the datapoints were evenly distributed on the interval, but variations can have impact, especially on the bandwidth approach.  
-Check code of locpol, locpoly to see why they give such different results. 
+Based on the preceding parts, here are the main takeaways:  
+Firstly, the span approach (loess, loess.as) seems to consistently underfit for small data sets, even though the hyperparameter is algorithmically chosen. They work however well for larger data sets. Maybe this is due to the algorithm in loess.as not producing optimal results, this could be checked by computing the span parameter externally. Given the same parameters, both functions produce identical results, meaning loess is better when we already have a prior idea of the span we want to use, whereas loess.as computes a candidate when we have no idea.  
+Regarding the bandwidth approach (locpol, locpoly), both functions yield different results when given identical inputs. In this case, we didn't choose the bandwidth parameter optimally, but both seem to work well when given a reasonable estimate.  Locpol is more sensitive to small variations in the data, but thus has a tendency to overfit and is not applicable on larger datasets. Locpoly seems to underfit a bit when given the same bandwidth as locpol, but this can be solved by reducing this parameter, as shown in the previous part. In summary, locpol is better when we think our data is not too noised and we want to detect finer deviations, and locpoly is better otherwise.  
+Comparing both approaches differently, we see the span is worse for small datasets (tends to underfit), but when considering larger datasets, both approaches give the same results, in term of efficiency.
 
+Computationnallywise, without surprise the loess.as function is slower than its counterparts, as it calculates its hyperparameter value internally. A relevant comparison would be to run a bandwidth- or span selection algorithm, such as K-folds, and integrating it in the timing of the other functions, to put them on even ground. Loess and locpol are faster, but locpoly is definitely the most efficient in its calculations, partially due to the fact that locpoly only outputs the fit (X,Y coordinates) and nothing else, which is not true for the others.
+
+Altogether, locpoly seems to be a good choice, both in performance and in time. However, we do need to select a bandwidth a priori. Loess and loess.as are basically the same function, thus it all comes down, as said previously, to whether or not we think we have a good span parameter input or not. Locpol is somewhere at the same level of interest; it is slower than locpoly, is not applicable to large datasets, but it gives interesting results and, again, is a more sensitive function to local variations than locpoly. 
+
+# Conclusion
+
+When only dealing with the application of a local regression, the locpoly function from the Kernsmooth package is a great candidate, but the other ones are also decent candidates, due to their versatility (more specific outputs) and their results that are altogether quite efficient.
+
+To look into the matter further, one could explore the following ideas:  
+
++ Run a K-folds algorithm for choosing bandwidth/span externally, then compare the resulting runtime with loess.as's that does it internally. 
++ Evaluate the performance of the different functions on datasets with a varying X-axis density: here, the data points were evenly distributed on the interval, but variations can have an impact, especially on the bandwidth approach. 
++ Check the code of the locpol and locpoly functions to examine why their results differ
++ Use, instead of the $R^2$ criteria,  a similar version of the calculations but using the residuals from the regression values to the function before it was noised, aka the underlying curve, to assess the performance in a more proper way. Here, the resulting values would decrease as soon as the considered algorithm would start either to underfit, or to overfit, which would make for a relevant complementary criteria to assessing the resulting curve. 
 
 
 # References (add references to fcts and packages)
