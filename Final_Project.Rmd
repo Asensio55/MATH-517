@@ -670,7 +670,21 @@ A remaining concern is the difference in the results of the two functions taking
 
 # General Results and Discussion
 
+Key aspects I see: 
+Span approach (loess, loess.as) underfits for small data, even with algorithmically-chosen hyperparameter, works well for bigger datasets.   
+Both functions give the same result when given same span parameter, so loess is better when we have a prior idea, and loess.as better when we don't, basically.  
+Bandwidth approach (locpol, locpoly) have different results, we didn't choose the parameter optimally but they give good results when given a reasonable bandwidth.  
+locpol is sensitive to small variations but then has a tendency to overfit + it's not applicable on bigger datasets.  
+locpoly underfits a bit with same parameters than locpol, but then works well for bigger size.  
+Locpol is as such better when we think the data is not too noised, and locpoly better otherwise.  
+When comparing span vs bandwidth approach, the span is a bit worse for small datasets (tends to underfit) but for bigger datasets it gives the same results.  
+I haven't checked the time aspect too much, so you know better than me here. Seems like locpoly is really efficient though, and of course loess.as has this span selection taking so much time.  
+Altogether, locpoly looks like a solid choice to me, both in performance and in timing, though we need to select different bandwidths to try it out.  Then, loess and loess.as are basically the same, so it comes down to if you want to calculate the span parameter internally or choose it differently. Locpol is somewhere at the same level, it's a bit slower than locpoly, it's unapplicable for big datasets, and as mentioned above, it's way more sensitive than locpoly.
 # Conclusion
+What could be tried next :  
+Run a K-folds algorithm for choosing bandwidth/span, then compare runtime with loess.as that does it anyway.  
+Evaluate performance on datasets with different X-axis density: here the datapoints were evenly distributed on the interval, but variations can have impact, especially on the bandwidth approach.  
+Check code of locpol, locpoly to see why they give such different results. 
 
 
 
