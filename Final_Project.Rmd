@@ -1,9 +1,9 @@
 ---
-title: 'Statistical Computation and Visualization: Final Project'
+title: 'Comparison of Local Regression in different R packages'
 author: "Issam Arabi, Eric Maeder"
 date: "2022-12-20"
 output: html_document
-bibliography: /home/emaeder/Desktop/MyFiles/Stat_Comp_Project/references.bib
+bibliography: ./references.bib
 link-citations: true
 ---
 
@@ -21,29 +21,28 @@ library(ggplot2)
 library(patchwork)
 ```
 
-## Comparison of Local Regression in different R packages.
 
-# Introduction
-When applying statistical methods in R using built functions, it is common to be confronted to multiple possible functions and packages aiming to tackle the same issues. In this scenario, and especially when dealing with large amounts of data, it is crucial yet difficult to choose the better optimized one towards fulfilling one's goals. Optimization denotes here both a measure of performance in the results and in the computation time.
+## Introduction
+When applying statistical methods in R using built-in functions, it is common to be faced with multiple possible functions and packages aiming to tackle the same issues. In this scenario, and especially when dealing with large amounts of data, it is crucial yet difficult to choose the better-optimized one for fulfilling one's goals. Optimization here denotes performance in terms of results precision and computation time.
 
-In this context, we aim to explore the different R packages aiming to implement local polynomial interpolation and their performance by applying them and timing their execution on specifically chosen data sets of different sizes and different structures to properly assess their versatility.
+In this context, we aim to explore the different R packages aiming to implement local polynomial interpolation and their performance by applying the packages and timing their execution on varied data sets of different sizes and structures to thoroughly assess their versatility.
 
-# Plan
-In this report, we will be following the structure from the work of  @deng2011density conducting a similar analysis on density estimation. Effectively, we will start with a small introduction to local polynomial regression, followed by the description of the different R packages we are to examine. Then, we will at the computation time of the different functions when applied to datasets of increasing sizes. Next, we will measure the performance of the considered functions when dealing with data sets with more challenging structures. Afterwards, we will discuss the results, and lastly, we will summarize our results and conclude.
+## Plan
+In this report, we will be following the method of analysis from the work of  @deng2011density on density estimation. Effectively, we will start with a small introduction to local polynomial regression, followed by a description of the different R packages we will examine. Next, we will add the computation time of the different functions when applied to data sets of increasing sizes. Then, we will measure the performance of the considered functions when dealing with data sets with more challenging structures. Afterward, we will discuss the results, and lastly, we will summarize our results and conclude.
 
-# Local Polynomial Regression
-Local Polyinomial regression, most widely known through the Locally Estimated Scatterplot Smoothing (LOESS) method, is a powerful prediction tool when observing bounded data sets with non-trivial distributions. It is a non-parametric method, which allows it to be versatile and easy to use. 
+## Local Polynomial Regression
+Local Polynomial regression, most widely known through the Locally Estimated Scatter-plot Smoothing (LOESS) method, is a powerful prediction tool when observing bounded data sets with non-trivial distributions. It is a non-parametric method, which allows it to be versatile and easy to use. 
 
-When observing response values $Y_1, Y_2, ...$ at points $X_1, X_2, ...$, the aim of local polynomial regression is to assign at each point X the value corresponding to $\underset{\beta \in \mathbb{R}^{p+1}}{argmin} \sum_{i=1}^n [Y_i - \beta_0 - \beta_1(X_i - x) - ... - \beta_p (X_i - x)^p]^2 K(\frac{X_i - x}{h})$, where p is the order of the fitted polynomial, K is a kernel function (basically a weighting function), and h is a bandwidth parameter allowing to choose how strong the influence of distant observations on the regression should be.  
+When observing response values $Y_1, Y_2, ...$ at points $X_1, X_2, ...$, local polynomial regression aims to assign at each point X the value corresponding to $\underset{\beta \in \mathbb{R}^{p+1}}{argmin} \sum_{i=1}^n [Y_i - \beta_0 - \beta_1(X_i - x) - ... - \beta_p (X_i - x)^p]^2 K(\frac{X_i - x}{h})$, where p is the order of the fitted polynomial, K is a kernel function (basically a weighting function), and h is a bandwidth parameter allowing to choose how strong the influence of distant observations on the regression should be.  
 As we can see, this is a least squares problem, and although the solution is long and unexciting to produce, it comes down to computing a gradient and solving a relatively simple system of equations.
 
-Then, the resulting polynomials are combined and smoothed to obtain a curve spanning the whole considered region. In practice, polynomial degrees p < 4 are mostly used due to the increasingly computational challenge, which is also the approach we will adopt in this report.
+Then, the resulting polynomials are combined and smoothed to obtain a curve spanning the whole considered region. In practice, polynomial degrees p < 5 are mostly used due to the increasing computational challenge, which is the approach we will adopt in this report.
 
-# Local Polynomial Regression Packages
+## Local Polynomial Regression Packages
 
 In this section, we give a quick overview of the considered functions and their parameters.
 
-+ **stats::loess**, @stats, from its documentation, fits a locally polynomial surface determined by one or more numerical predictors, using local fitting. its typical call is as follow: 
++ **stats::loess**, @stats, from its documentation, fits a local polynomial surface determined by one or more numerical predictors, using local fitting. its typical call is as follows: 
 
 loess(formula, data, weights, subset, na.action, model = FALSE,  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      span = 0.75, enp.target, degree = 2,  
@@ -59,10 +58,10 @@ loess(formula, (data),
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      family = "gaussian"  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      method = "loess")
       
-where we give our response and explanatory variables in formula, span controls the bandwidth, degree is self-explanatory and family specifies we want a least-squares approach. 
-The span parameter works as follows: when given a value smaller than 1, each local regression is fitted using the proportion of observations equal to the span value into account, with tricubic weighting (1- (distance to point/maximal distance to considered points)^3)^3. 
+where *formula* is where we set the response and explanatory variables, *span* is used to control the bandwidth, *degree* is self-explanatory and *family* specifies that we want a least-squares approach. 
+*Span* works as follows: when given a value smaller than 1, each local regression is fitted using the proportion of observations equal to the span value into account, with tri-cubic weighting $(1 - (\frac{\text{distance to point}}{\text{maximal distance to considered points}})^3)^3$. 
 
-This approach prevents cases of badly spread data where no observation is in the considered bandwidth when fitting a local regression, making it unstable, at the cost of computing the distance to each data point. Moreover, this makes it difficult to compare to other functions, as we cannot give them exactly the same inputs.
+This approach prevents cases of badly spread data where no observation is in the considered bandwidth when fitting a local regression, making it unstable, at the cost of computing the distance to each data point. Moreover, this makes it difficult to compare to other functions, as we cannot give them the exact same inputs.
 
 + **locpol::locpol**, @locpol, follows the steps of the local polynomial regression described in the previous section. Its call is as follows: 
 
@@ -73,34 +72,34 @@ again, we will not use all parameters for comparison in this report, although th
 
 locpol(formula,(data),bw=NULL,kernel=EpaK,deg=1)
 
-where formula, data and deg are identical to the loess function. The bw parameter is the bandwidth, and the kernel is the kernel function, Epanechnikov by default, but can be gaussian, uniform,...
+where *formula*, *data*, and *deg* are identical to the corresponding parameters in the loess function. The *bw* parameter is the bandwidth, and *kernel* is the kernel function set to Epanechnikov by default, but can be gaussian, uniform, etc.
 This follows closely the theoretical approach we chose.
 
-+ **KernSmooth::locpoly**, @kernsmooth, aims to fit a local polynomial with kernel weighting to estimate a regression function. It can also be used towards density estimation and their derivatives. We call it as follows:
++ **KernSmooth::locpoly**, @kernsmooth, aims to fit a local polynomial with kernel weighting to estimate a regression function. It can also be used for density estimation and its derivatives. We call it as follows:
 
 locpoly(x, y, drv = 0L, degree, kernel = "normal",  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    bandwidth, gridsize = 401L, bwdisc = 25,  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    range.x, binned = FALSE, truncate = TRUE)
 
-Here, x,y are the explanatory and response variables, drv concerns derivative estimations, kernel and bandwidth are self-explanatory, gridsize represents the number of equidistant points over which we want to estimate the fct, and the last parameters are used to speed up computations when the data is pre-processed. This approach is pretty similar to locpol, and as such to our theoretical version. The similarity in input parameters makes it easy to compare both of them.
+Here, *x* and *y* are the explanatory and response variables, *drv* concerns derivative estimations, *kernel* and *bandwidth* are self-explanatory,  *gridsize* represents the number of equidistant points over which we want to estimate the fct, and the last parameters are used to speed up computations when the data is pre-processed. This approach is pretty similar to locpol and consequently to our theoretical version. The similarity in input parameters makes it easy to compare both of them.
 
-+ **fANCOVA::loess.as**, @fancova, performs local polynomial regression with automatic bandwidth selection using either cross-validation or AIC as criterion. It also has an option to select it manually, which we will use towards comparison. below the usage:
++ **fANCOVA::loess.as**, @fancova, performs local polynomial regression with automatic bandwidth selection using either cross-validation or AIC as the criterion. It also gives the option to select it manually, which we will use for comparison. This is the usage:
 
 loess.as(x, y, degree = 1, criterion = c("aicc", "gcv"),  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	family = c("gaussian", "symmetric"), user.span = NULL,  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	plot = FALSE, ...)
 		
-where x,y,degree, criterion are self-explanatory. We will use here the gaussian family corresponding to the Least Squares approach, and user.span is a manual smoothing parameter selection (bandwidth value e.g.). plot is an option to generate a visualization of the results.
+where *x*, *y*, *degree*, and *criterion* are self-explanatory. Here we will use the Gaussian family corresponding to the Least Squares approach, and *user.span* is a manual smoothing parameter selection (bandwidth value e.g.). *plot* is an option to generate a visualization of the results.
 
-# Other more specific local regressions
+#### Other more specific local regressions
 
-+ **caret::knnreg** ,@caret, and other k-nearest neighbors approaches, are a substitute to the bandwidth approach, making sure that isolates on the x-axis do not have too much impact on the results by always taking at least k observations into account. 
++ **caret::knnreg**, @caret, and other k-nearest neighbors approaches, are a substitute to the bandwidth approach, making sure that isolates and outliers on the x-axis do not have too much impact on the results by always taking at least k observations into account. 
 
-+ **spgwr::gwr**, @spgwr, performs a geographically weighted regression; a special type of local regression applicable to spatially ordered data, taking into account the distance of each observations into account when fitting a local estimate.
++ **spgwr::gwr**, @spgwr, performs a geographically weighted regression; a special type of local regression applicable to spatially ordered data, taking into account the distance of each observation when fitting a local estimate.
 
-# Comparison of Computation times
+## Comparison of Computation times
 
-```{r}
+```{r, echo = FALSE}
 
 X4 <- seq(from = -5, to = 5, by= 0.01)
 d4 <- dnorm(X4)
@@ -141,7 +140,7 @@ for (i in 1:1000){
 
 To compare computation times for the functions, we run each of them for 1000 times and compare the average runtime. Below are the results.
 
-```{r}
+```{r, echo = FALSE}
 
 freq_data <- tibble(loess=lo/1000, locpol=lp/1000, loess.as=loas/1000, locpoly=loly/1000)
 
@@ -151,11 +150,11 @@ print(freq_data)
 
 From this data, we can see that loess.as takes much more time than the rest of the functions, followed by locpol, then loess. The most computationally efficient function was locpoly. This is due to the loess.as function calculating its optimal bandwidth internally, requiring the application of a selection algorithm, such as cross validation, or more generally a K-folds approach, for example. This does require extra time, but has the advantage of combining choosing an efficient span parameter and applying it at once. A more valid comparison would be to time a K-folds approach on the datasets to choose either a bandwidth or a span parameter, and add its execution time to the other functions.
 
-# Comparison of approximation residuals
+## Comparison of approximation residuals
 
-Now, we delve into the comparison of the fit produced by the different functions, applied on the same datasets. To do so, we use two families of different datasets: one stemming from the gaussian distribution added to a sinusoidal factor, and one originating from the claw distribution noised @wavethresh. For both families, we look at samples of size $10^2,10^3,10^4$ and $10^5$. On each of those, we apply the four considered functions and we calculate the $R^2$ value, representing the goodness of fit (coefficient of determination). This allows for comparison both between different functions on the same datasets and for the same function on different sizes of datasets.  
-Worth to keep in mind is that two of the functions take a span parameter into account, denoting a percentage of the datapoints to consider, and the two others a bandwidth parameter. This implies the two first will not be meaningfully comparable to the latters, as we do not run any algorithm, such as cross-validation, to choose a bandwidth parameter. For the span parameter, since such an algorithm is already implemented in the loess.as function, we run the loess function with the resulting parameter to have comparatively similar performances.  
-Since locpol function is un-applicable to datasets too large, we set the resulting R2 to 0 on the last plot.  
+Now, we delve into the comparison of the fit produced by the different functions, applied to the same datasets. To do so, we use two families of different data sets: one stemming from the Gaussian distribution added to a sinusoidal factor, and one originating from the claw distribution noised @wavethresh. For both families, we look at samples of size $10^2,10^3,10^4$ and $10^5$. On each of those, we apply the four considered functions and we calculate the $R^2$ value, representing the goodness of fit (coefficient of determination). This allows for comparison between different functions on the same data sets and for the same function on different sizes of data sets.  
+Worth keeping in mind is that two of the functions take a span parameter into account, denoting a percentage of the data points to consider, and the two others a bandwidth parameter. This implies the first two will not be meaningfully comparable to the latter, as we do not run any algorithm, such as cross-validation, to choose a bandwidth parameter. For the span parameter, since such an algorithm is already implemented in the loess.as function, we run the loess function with the resulting parameter to have comparatively similar performances.  
+Since locpol function is inapplicable to datasets too large, we set the resulting R2 to 0 on the last plot.  
 We output the different fit functions, tables of the $R^2$ coefficients, and lastly a plot of the coefficients of determination on each dataset size.
 
 Let us start with the smaller datasets:
@@ -217,7 +216,7 @@ pc2 <- ggplot() + geom_point(mapping = aes(x = X3, y = fitted_loc, color = "loes
 pc2
 ```
 
-For now, we cannot really see the claws emerging from the distribution, but that is only due to the inaccuracy induced by the small sample size, as the locpol function produces an R^2 of 1, meaning it approximates the function perfectly. The others underfit a bit, leading to smaller values and worse approximation. However, that might not be a bad result, as we are a priori with so little data not sure we should fit the data so precisely in fear of overfitting. 
+For now, we cannot see the claws emerging from the distribution, but that is only due to the inaccuracy induced by the small sample size, as the locpol function produces an R^2 of 1, meaning it approximates the function perfectly. The others underfit a bit, leading to smaller values and worse approximation. However, that might not be a bad result, as we are a priori with little data and therefore not sure whether we should fit the data so precisely as we fear overfitting to the data. 
 
 Let us look at what changes when we consider a superior order of magnitude:
 
@@ -273,9 +272,9 @@ pc3 <- ggplot() + geom_point(mapping = aes(x = X4, y = fitted_loc, color = "loes
 pc3
 ```
 
-Again, the locpol function interpolates the data perfectly, and we can indeed see the claws appearing on the plot. The others are still underfitting by quite a lot this time, leading to $R^2$ coefficients around 0.65 for all the three others. Interesting to note is that the locpoly and the locpol function perform differently by a lot even though we input the same parameters.  
-Interesting is also that the two functions with an algorithmically-computed span from the loess.as function underfit quite badly. This hints that this specific method is not sensible enough to local variations, maybe because of the use of a too slow-decreasing kernel when taking the span parameter into account.  
-The great performance of the locpol function however ends there, as we are prevented from using it on bigger dataset by a 'maxevalpts' parameter, limiting the maximum size we can input. Let us look at the two last density plots together, as they contain similar results.
+Again, the locpol function interpolates the data perfectly, and we can indeed see the claws appearing on the plot. The others are still underfitting by quite a lot this time, leading to $R^2$ coefficients around 0.65 for all three others. Interestingly, the locpoly and the locpol functions performance differs by a lot even though we input the same parameters.  
+Furthermore, the two functions with an algorithmically-computed span from the loess.as function underfit quite badly. This hints that this specific method is not sensitive enough to local variations, maybe because of the use of a too-slow-decreasing kernel when taking the span parameter into account.  
+The great performance of the locpol function however ends there, as we are prevented from using it on a bigger dataset by a *maxevalpts* parameter, limiting the maximum size we can input. Let us look at the two last density plots together, as they contain similar results.
 
 ```{r c45, echo = FALSE}
 #distribution
@@ -366,7 +365,7 @@ pc4
 pc5
 ```
 
-On the above two plots, we see loess and loess.as have shaped the target claw function quite nicely, which is appropriate, as we noised the data using a mean zero gaussian function. Towards comprehension, let us have a look at the given dataset for the last computations (size $10^5$):
+On the above two plots, we see loess and loess.as have shaped the target claw function quite nicely, which is appropriate, as we noised the data using a mean zero Gaussian function. Toward comprehension, let us have a look at the given dataset for the last computations (size $10^5$):
 
 ```{r claw, echo = FALSE}
 plot(X6,Y6,main = "noised claw distribution on 10^5 points")
@@ -401,9 +400,9 @@ pr2c
 
 ```
 
-First looking at the table, we see loess and loess.as function similarly given the same parameters, meaning we can exchange one for the other, resultswise, depending on whether we know the span we want to use or not. Indeed, computing this parameter takes of course time. Indeed, Cross-validation has an $O(n^2)$ complexity, reduced to $O(Kn)$ when considering K-folds cross validation, where n is the sample size. For the two bandwidth functions, locpol seems whenever applicable, a better choice compared to the locpoly, as it yields better results altogether. Caution is however needed when interpreting these results, as although a coefficient of determination equal to unity means the data is perfectly interpolated, this does not mean the algorithm performs well when dealing with noised data, as it means the locpol function is overfitting the data points. In this case however, this is preferable, as it is the only function that shaped the existing claws when applied on datasets of small size.
+First looking at the table, we see loess and loess.as work similarly given the same parameters, meaning we can exchange one for the other, results-wise, depending on whether we know the span we want to use or not. Of course, computing this parameter takes time. Cross-validation has an $O(n^2)$ complexity, reduced to $O(Kn)$ when considering K-folds cross-validation, where n is the sample size. For the two bandwidth functions, locpol seems whenever applicable, a better choice compared to the locpoly, as it yields better results altogether. However, caution is needed when interpreting these results, as although a coefficient of determination equal to unity means the data is perfectly interpolated, it does not mean that the algorithm performs well when dealing with noised data, as that would indicate that the locpol function is over-fitting the data points. In this case, however, this is preferable, as it is the only function that shaped the existing claws when applied on datasets of small size.
 
-Looking at the plot now, we see the loess and loess.as actually increase their coefficients of determination as the sample size grows. Indeed, it seems it requires a lot of data to 'convince' the loess.as algorithm to reduce its span parameter enough not to underfit anymore. They obtain here better results than the locpoly function, but this entirely depends on the bandwidth parameter, that we would normally tune finely by applying an algorithm to choose it. As an example, we see the tendency to underfit disappears as expected when reducing the bandwidth, here by dividing it by 10:
+Looking at the plot now, we see the loess and loess.as actually increase their coefficients of determination as the sample size grows. Indeed, it seems that it requires a lot of data to "convince" the loess.as algorithm to reduce its span parameter enough so that it does not underfit anymore. They obtain here better results than the locpoly function, but this entirely depends on the bandwidth parameter, that we would normally tune fine by applying an algorithm to choose it. As an example, we see the tendency to underfit disappears as expected when reducing the bandwidth, here by dividing it by 10:
 
 ```{r locpoly, echo = FALSE}
 LoLyc5 <- locpoly(daf5$X5, daf5$Y5, degree = 2, kernel = "normal", bandwidth = 0.025, gridsize = 10001) # only gives results
@@ -413,10 +412,10 @@ fitted_Loly <- LoLyc5$y
 pc4
 ```
 
-Now moving to a different family of dataset, we generate this time a gaussian random variable to which we add small sinusoidal components, aiming to generate softer waves than the claw function. We expect here the functions to perform better, as the local variations should be smoother. We also noise them identically to the claw dataset. This time, we use a smaller bandwidth for bigger datasets for the locpoly function, as the previous one was definitely too big for the bigger datasets, as a higher x-axis density leads to more local samples and thus this reduction is relevant. 
+Now moving to a different family of data-sets, we generate this time a Gaussian random variable to which we add small sinusoidal components, aiming to generate softer waves than the claw function. Here, we expect the functions to perform better, as the local variations should be smoother. We also noise them identically to the claw data-set. This time, we use a smaller bandwidth for bigger data-sets for the locpoly function, as the previous one was clearly too big for the larger data-sets, as a higher x-axis density leads to more local samples and thus this reduction is relevant. 
 
-With this in mind, we now once again look at the different results, starting with order 100, moving to 10^5.  
-First, we look at original curve we are trying to interpolate on $10^4$ points, without the noise: 
+With this in mind, we now once again look at the different results, starting with order 100, and moving to 10^5.  
+First, we look at the original curve we are trying to interpolate on $10^4$ points, without the noise: 
 
 ```{r target, echo = FALSE}
 Y5 <- dnorm(X5) # normal distribution
@@ -479,7 +478,8 @@ pc2 <- ggplot() + geom_point(mapping = aes(x = X3, y = fitted_loc, color = "loes
 pc2
 ```
 
-On the first graph, we can see the span approaches underfit the curve quite strongly, the locpoly function gives a good idea of the underlying curve, and the locpol function , if maybe too wiggly, also gives good results back. This is similar to what happened in the claw distribution case.  
+On the first graph, we can see that the span approaches under-fit the curve quite strongly, the locpoly function gives a good idea of the underlying curve, and the locpol function, while a bit too wiggly, also returns quality results. This is similar to what happened in the claw distribution case.
+
 Let us observe the evolution of the regressions, as the number of data points increases:
 ```{r ps3, echo = FALSE}
 ## 1001
@@ -534,7 +534,7 @@ pc3 <- ggplot() + geom_point(mapping = aes(x = X4, y = fitted_loc, color = "loes
 pc3
 ```
 
-Here, we are still fitting the locpol and the locpoly functions with the same input parameters, but we see once again a difference. Indeed, it seems the locpol function has a tendency to overfit quite badly in this case, which gives us a noisy and rough resulting underlying curve, whereas the locpoly function and the two span approaches give a better result. Noticeable is the small underfit of the loess function, possibly due to the approximation of the span parameter we gave it, instead of the exact number (order of $10^{-3}$). 
+Here, we are still fitting the locpol and the locpoly functions with the same input parameters, but, once again, we notice a difference. It appears that the locpol function tends to over-fit quite badly in this case, which returns a noisy and rough resulting underlying curve, whereas the locpoly function and the two span approaches give a better result. Noticeable is the small under-fit of the loess function, possibly due to the approximation of the span parameter we input to it, instead of the exact number (order of $10^{-3}$). 
 
 ```{r ps4, echo = FALSE}
 # 10001 
@@ -656,39 +656,40 @@ pr2c <- ggplot() + geom_point(mapping = aes(x = log10(X), y = locr2, color = "lo
  pc5
 ```
 
-With so many data points and uniform noise, we have now good results for each of the three functions. We can see the regressions become more smooth as the number of data points goes up, most likely due to the lesser impact of the noise given, a direct consequence from the Law of Large Numbers. Now, let us have a final look at the evolution of the $R^2$ coefficients, although it is a worse indicator than checking the underlying fits.
+With so many data points and uniform noise, we now have good results for each of the three functions. We can see that the regressions become more smooth as the number of data points goes up, most likely due to the lesser impact of the noise given, a direct consequence of the Law of Large Numbers. Now, let us have a final look at the evolution of the $R^2$ coefficients (even though it is a worse indicator than checking the underlying fits).
 ```{r final results, echo = FALSE}
 tab
 pr2c
 ```
 
-As we can see, when we increase the number of datapoints, the span and the bandwidth methods give similar results. For smaller samples however, the bandwidth approach is preferable. Again, we can see a clear overfitting tendency from the locpol function, as both of the considered coefficients of determination are equal to one, meaning the algorithm interpolated each point perfectly, which might be detrimental when working with noised data.
+As we can see, when we increase the number of data points, the span and the bandwidth methods give similar results. For smaller samples, however, the bandwidth approach is preferable. Again, we can see a clear overfitting tendency from the locpol function, as both of the considered coefficients of determination are equal to one, meaning the algorithm interpolated each point perfectly, which might be detrimental when working with noised data.
 
-In summary, we observed two different approaches to local regression: one using a span parameter and one using a bandwidth, each with two different functions. It seems the bandwidth approach tends to underfit the data, especially when looking at small datasets, but works fine when dealing with larger samples. The bandwidth approach does not necessarily have this problem, but the two considered functions behave quite differently even in cases where they are givem identical parameters; the locpoly function is way more sensible to small fluctuations of the data, which is good to detect patterns with relatively small samples (order of 100,1000), but overfits quite badly when given noised data. The locpoly function on the contrary, tends to underfit on smaller samples (given the same bandwidth as the locpol function) but works well for bigger datasets. This is altogether an useful result, as we cannot apply the locpoly function on samples that are too big anyway.
+In summary, we observed two different approaches to local regression: one using a span parameter and one using a bandwidth, each with two different functions. It seems the bandwidth approach tends to underfit the data, especially when looking at small datasets, but works fine when dealing with larger samples. The bandwidth approach does not necessarily have this problem, but the two considered functions behave quite differently even in cases where they are given identical parameters; the locpoly function is much more sensitive to small fluctuations of the data, which is good to detect patterns with relatively small samples (order of 100,000), but overfits quite badly when given noised data. The locpoly function, on the contrary, tends to underfit on smaller samples (given the same bandwidth as the locpol function) but works well for bigger datasets. This is overall a useful result, as we cannot apply the locpoly function on samples that are too big anyway.
 
-A remaining concern is the difference in the results of the two functions taking a bandwidth as input parameter. Indeed, there is no explanation in the function descriptions that explain why they give back so different results, as both seem to 'fit a local polynomial given a kernel and a bandwidth'. A possibility would be the regression criteria, that could either be least squares, Aic, ...
+A remaining concern is the difference in the results of the two functions taking a bandwidth as input parameter. Indeed, there is no explanation in the function descriptions that explain why they output results so differently, as both seem to 'fit a local polynomial given a kernel and a bandwidth'. A possibility would be the regression criteria, which could either be least squares, Aic, etc.
 
-# General Results and Discussion
+## General Results and Discussion
 
 Based on the preceding parts, here are the main takeaways:  
-Firstly, the span approach (loess, loess.as) seems to consistently underfit for small data sets, even though the hyperparameter is algorithmically chosen. They work however well for larger data sets. Maybe this is due to the algorithm in loess.as not producing optimal results, this could be checked by computing the span parameter externally. Given the same parameters, both functions produce identical results, meaning loess is better when we already have a prior idea of the span we want to use, whereas loess.as computes a candidate when we have no idea.  
-Regarding the bandwidth approach (locpol, locpoly), both functions yield different results when given identical inputs. In this case, we didn't choose the bandwidth parameter optimally, but both seem to work well when given a reasonable estimate.  Locpol is more sensitive to small variations in the data, but thus has a tendency to overfit and is not applicable on larger datasets. Locpoly seems to underfit a bit when given the same bandwidth as locpol, but this can be solved by reducing this parameter, as shown in the previous part. In summary, locpol is better when we think our data is not too noised and we want to detect finer deviations, and locpoly is better otherwise.  
-Comparing both approaches differently, we see the span is worse for small datasets (tends to underfit), but when considering larger datasets, both approaches give the same results, in term of efficiency.
 
-Computationnallywise, without surprise the loess.as function is slower than its counterparts, as it calculates its hyperparameter value internally. A relevant comparison would be to run a bandwidth- or span selection algorithm, such as K-folds, and integrating it in the timing of the other functions, to put them on even ground. Loess and locpol are faster, but locpoly is definitely the most efficient in its calculations, partially due to the fact that locpoly only outputs the fit (X,Y coordinates) and nothing else, which is not true for the others.
++ First, the span approach (loess and loess.as) seems to consistently underfit for small data sets, even though the hyperparameter is algorithmically chosen. However, they work well for larger data sets. Maybe this is due to the algorithm in loess.as not producing optimal results, which could be checked by computing the span parameter externally. When given the same parameters, both functions produce identical results, which allows us to conclude that loess is better when we already have a prior idea of the span we want to use, whereas loess.as computes a candidate when we have no idea.  
 
-Altogether, locpoly seems to be a good choice, both in performance and in time. However, we do need to select a bandwidth a priori. Loess and loess.as are basically the same function, thus it all comes down, as said previously, to whether or not we think we have a good span parameter input or not. Locpol is somewhere at the same level of interest; it is slower than locpoly, is not applicable to large datasets, but it gives interesting results and, again, is a more sensitive function to local variations than locpoly. 
++ Regarding the bandwidth approach (locpol and locpoly), both functions yield different results when given identical inputs. In this case, we didn't choose the bandwidth parameter optimally, but both seem to work well when given a reasonable estimate.  Locpol is more sensitive to small variations in the data, but this makes it prone to over-fitting and not optimal for larger datasets. On the other hand, Locpoly seems to underfit a bit when given the same bandwidth as locpol, but this can be solved by reducing this parameter, as shown in the previous section. In summary, locpol is better when we think our data is not too noisy and we want to detect finer deviations, and locpoly is better otherwise.  
+Comparing both approaches differently, we see that the span approach is worse for small data sets (tends to underfit), while both approaches give similar results when working on large data sets.
 
-# Conclusion
++ Computationally, the loess.as function is slower than its counterparts, as it calculates its hyperparameter value internally. A relevant comparison would be to run a bandwidth or span selection algorithm, such as K-folds, and integrate it into the timing of the other functions, to put them on even ground. Loess and locpol are faster, but locpoly is without a doubt the most efficient in its calculations, partially because locpoly only outputs the fit (X, Y coordinates) and nothing else, which is not the case for the others.
 
-When only dealing with the application of a local regression, the locpoly function from the Kernsmooth package is a great candidate, but the other ones are also decent candidates, due to their versatility (more specific outputs) and their results that are altogether quite efficient.
+Overall, locpoly seems to be a good choice, both in terms of accuracy and time. However, we do need to select a bandwidth a priori. Loess and loess.as are very similar; thus, it all comes down to whether or not we think we have a good span parameter input or not. Locpol is somewhere at the same level of performance; it is slower than locpoly and does not apply to large datasets, but it gives interesting results and is a more sensitive function to local variations than locpoly.
 
-To look into the matter further, one could explore the following ideas:  
+## Conclusion
 
-+ Run a K-folds algorithm for choosing bandwidth/span externally, then compare the resulting runtime with loess.as's that does it internally. 
-+ Evaluate the performance of the different functions on datasets with a varying X-axis density: here, the data points were evenly distributed on the interval, but variations can have an impact, especially on the bandwidth approach. 
-+ Check the code of the locpol and locpoly functions to examine why their results differ
-+ Use, instead of the $R^2$ criteria,  a similar version of the calculations but using the residuals from the regression values to the function before it was noised, aka the underlying curve, to assess the performance in a more proper way. Here, the resulting values would decrease as soon as the considered algorithm would start either to underfit, or to overfit, which would make for a relevant complementary criteria to assessing the resulting curve. 
+When only dealing with the application of local regression, the locpoly function from the Kernsmooth package is a great candidate, but the other ones are also decent candidates, due to their versatility (better performance for some specific inputs) and their results that are quite accurate in general.
 
+To look further into the matter, one could explore the following ideas:  
 
-# References (add references to fcts and packages)
++ Run a K-folds algorithm for choosing bandwidth/span externally, then compare the resulting run-time with loess.as's (which computes it internally). 
++ Evaluate the performance of the different functions on datasets with a varying X-axis density. In our analysis, the data points were evenly distributed on the interval, but variations can have an impact, especially on the bandwidth approach. 
++ Check the code of the locpol and locpoly functions to examine why their results differ.
++ Instead of the $R^2$ criteria, implement a similar version of the calculations but using the residuals from the regression values to the function before it was noised (i.e. the underlying curve) to assess the performance in a more formal way. Here, the resulting values would decrease as soon as the considered algorithm would start either to underfit, or to overfit, which would make for a relevant complementary criteria to assessing the resulting curve. 
+
+## References (add references to fcts and packages)
